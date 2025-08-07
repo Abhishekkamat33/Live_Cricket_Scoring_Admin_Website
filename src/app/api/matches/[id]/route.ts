@@ -3,9 +3,12 @@ import { doc, deleteDoc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/firebaseConfig';
 
 // Delete match by ID
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(
+  request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
-    const id = params.id;
+    const { id } = await context.params;
 
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
@@ -22,9 +25,12 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
 }
 
 // Update match by ID with given data in request body
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(
+  request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
-    const id = params.id;
+    const { id } = await context.params;
 
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });

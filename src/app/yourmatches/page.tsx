@@ -52,12 +52,10 @@ type RawMatch = {
   tossDecision?: string;
 };
 
-interface CricketMatchManagerProps {
-  initialMatches?: RawMatch[];
-}
 
-const CricketMatchManager: React.FC<CricketMatchManagerProps> = ({ initialMatches = [] }) => {
-  const [matches, setMatches] = useState<Match[]>(initialMatches.map(transformMatch));
+
+const CricketMatchManager = () => {
+  const [matches, setMatches] = useState<Match[]>([]);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [matchCreatedBy, setMatchCreatedBy] = useState<string | null>(null);
 

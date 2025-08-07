@@ -23,7 +23,7 @@ interface Team {
   score?: number;
   wickets?: number;
   overs?: string;
-  players: Player[];
+  players?: Player[];           // <-- make players optional here
   benchPlayers?: Player[];
   supportingStaff?: Staff[];
 }
@@ -114,7 +114,7 @@ const Index = () => {
           <h3 className="text-lg sm:text-xl font-semibold text-gray-900">Playing XI</h3>
         </div>
         <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-          {team.players.map((player) => (
+          {team?.players?.map((player) => (
             <PlayerCard key={player.id} player={player} teamName={team.name} />
           ))}
         </div>
