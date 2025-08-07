@@ -281,8 +281,6 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
           setStrikerName('');
           setNonStrikerName('');
           setCurrentBowler('');
-          setBattingTeam(null);
-          setBowlingTeam(null);
           setNewBatsman('');
           setOutBatsman('');
           setFielderName('');
