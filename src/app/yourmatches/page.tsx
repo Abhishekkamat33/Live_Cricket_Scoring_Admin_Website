@@ -3,7 +3,8 @@ import React, { useState, ChangeEvent, useEffect } from 'react';
 import { Edit, Trash2, Plus, Calendar, Clock, MapPin, Trophy, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { getAuth } from 'firebase/auth';
+import { auth } from '@/firebaseConfig';
+
 
 type Team = {
   name: string;
@@ -64,7 +65,30 @@ const CricketMatchManager = () => {
 
 
 
+  useEffect(() => {
+    async function verifySession() {
+      const user = auth.currentUser;
+      if (!user) {
+        router.push('/login');
+        return;
+      }
 
+      const idToken = await user.getIdToken(true);
+
+      const response = await fetch('/api/protected', {
+        headers: { Authorization: `Bearer ${idToken}` },
+      });
+
+      if (response.status === 401) {
+        router.push('/login');
+      } else {
+        const data = await response.json();
+        setMatchCreatedBy(data.uid);
+      }
+    }
+
+    verifySession();
+  }, [router]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -184,7 +208,6 @@ const CricketMatchManager = () => {
   };
 
   const handleEdit = (match: Match): void => {
-    console.log(match);
     if (match.status === 'live') {
       router.push(`/live-scoring/${match.id}`);
     }
@@ -244,7 +267,7 @@ const CricketMatchManager = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-4 sm:space-y-0">
           {/* Team 1 */}
           <div className="flex items-center space-x-3">
-          <Image src={match?.team1?.image || ''} alt={match.team1.name} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" />
+          {/* <Image src={match?.team1?.image || ''} alt={match.team1.name} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" /> */}
             <div className="flex-1 min-w-0">
               <h3 className="font-bold text-base sm:text-lg text-gray-800 truncate">{match.team1.name}</h3>
               {match.team1.score && <p className="text-sm text-gray-600">{match.team1.score}</p>}
@@ -264,7 +287,7 @@ const CricketMatchManager = () => {
               {match.team2.score && <p className="text-sm text-gray-600">{match.team2.score}</p>}
             </div>
             
-          <Image src={(match?.team2?.image)|| ''} alt={match.team2.name} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" />
+          {/* <Image src={(match?.team2?.image)|| ''} alt={match.team2.name} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" /> */}
           </div>
         </div>
 

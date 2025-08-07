@@ -43,88 +43,32 @@ const Index = () => {
     matchType: '',
   });
 
-  const verifySession = useCallback(async (user: User) => {
-    try {
-      setAuthError('');
-      console.log('Verifying session for user:', user.uid);
-      
-      // Ensure user is still valid
-      await user.reload();
-      
-      const idToken = await user.getIdToken(true);
-      console.log('Making API request with token...');
-      
-      const response = await fetch('/api/protected', {
-        headers: { 
-          'Authorization': `Bearer ${idToken}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      console.log('API response status:', response.status);
-      
-      if (response.status === 401) {
-        console.log('Unauthorized - redirecting to login');
-        setAuthError('Session expired. Please log in again.');
+  useEffect(() => {
+    async function verifySession() {
+      const auth = getAuth();
+      const user = auth.currentUser;
+      if (!user) {
         router.push('/login');
         return;
       }
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      
-      const data: ProtectedApiResponse = await response.json();
-      console.log('Session verified successfully:', data);
-      setMatchCreated(data.uid);
-      
-    } catch (error) {
-      console.error('Error verifying session:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
-      setAuthError(errorMessage);
-      
-      // Only redirect on auth-specific errors
-      if (errorMessage.includes('auth') || errorMessage.includes('token') || errorMessage.includes('unauthorized')) {
+
+      const idToken = await user.getIdToken(true);
+
+      const response = await fetch('/api/protected', {
+        headers: { Authorization: `Bearer ${idToken}` },
+      });
+
+      if (response.status === 401) {
         router.push('/login');
+      } else {
+        const data = await response.json();
+        setMatchCreated(data.uid);
+        setLoading(false);
       }
     }
+
+    verifySession();
   }, [router]);
-
-  useEffect(() => {
-    console.log('Setting up auth state listener...');
-    const auth = getAuth();
-    
-    const unsubscribe = onAuthStateChanged(
-      auth, 
-      async (user: User | null) => {
-        console.log('Auth state changed:', user ? `User: ${user.uid}` : 'No user');
-        
-        if (!user) {
-          console.log('No authenticated user - redirecting to login');
-          setLoading(false);
-          router.push('/login');
-          return;
-        }
-        
-        // Give Firebase a moment to fully initialize
-        setTimeout(async () => {
-          await verifySession(user);
-          setLoading(false);
-        }, 500);
-      },
-      (error) => {
-        console.error('Auth state listener error:', error);
-        setAuthError(`Authentication error: ${error.message}`);
-        setLoading(false);
-        router.push('/login');
-      }
-    );
-
-    return () => {
-      console.log('Cleaning up auth listener');
-      unsubscribe();
-    };
-  }, [router, verifySession]);
 
   // Show loading screen while checking authentication
   if (loading) {
@@ -319,10 +263,9 @@ const Index = () => {
                       <Image
                         src={teamALogoPreview}
                         alt="Team A Logo Preview"
-                        width={80}
-                        height={80}
+                        width={80}   // approximate width you want
+                        height={80}  // approximate height you want
                         className="mt-2 object-contain"
-                        onError={() => setTeamALogoPreview(defaultTeamALogo)}
                       />
                     )}
                   </div>
@@ -356,17 +299,178 @@ const Index = () => {
                       <Image
                         src={teamBLogoPreview}
                         alt="Team B Logo Preview"
-                        width={80}
-                        height={80}
+                        width={80}   // approximate width you want
+                        height={80}  // approximate height you want
                         className="mt-2 object-contain"
-                        onError={() => setTeamBLogoPreview(defaultTeamBLogo)}
                       />
                     )}
                   </div>
                 </div>
 
-                {/* Rest of your form fields - keeping them unchanged for brevity */}
-                {/* ... (keep all your existing form fields here) ... */}
+                {/* Rest of your form fields unchanged (overs, date, time, venue, toss etc.) */}
+                {/* Match Details Row */}
+                <div className="grid md:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-foreground/80 uppercase tracking-wide">
+                      Overs
+                    </label>
+                    <input
+                      type="number"
+                      name="overplayed"
+                      placeholder="20"
+                      value={matchForm.overplayed}
+                      onChange={handleChange}
+                      required
+                      min={1}
+                      max={50}
+                      className="w-full p-4 text-sm sm:text-base bg-background/50 border-2 rounded-xl focus:border-primary focus:bg-background transition-all duration-300 placeholder:text-muted-foreground"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-foreground/80 uppercase tracking-wide">
+                      Date
+                    </label>
+                    <input
+                      type="date"
+                      name="date"
+                      value={matchForm.date}
+                      onChange={handleChange}
+                      required
+                      min={today}
+                      className="w-full p-4 text-sm sm:text-base bg-background/50 border-2 rounded-xl focus:border-primary focus:bg-background transition-all duration-300"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-foreground/80 uppercase tracking-wide">
+                      Time
+                    </label>
+                    <input
+                      type="time"
+                      name="time"
+                      value={matchForm.time}
+                      onChange={handleChange}
+                      required
+                      className="w-full p-4 text-sm sm:text-base bg-background/50 border-2 rounded-xl focus:border-primary focus:bg-background transition-all duration-300"
+                    />
+                  </div>
+                </div>
+
+                {/* Venue */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-foreground/80 uppercase tracking-wide">
+                    Venue
+                  </label>
+                  <input
+                    type="text"
+                    name="venue"
+                    placeholder="Stadium name and location"
+                    value={matchForm.venue}
+                    onChange={handleChange}
+                    required
+                    className="w-full p-4 text-sm sm:text-base bg-background/50 border-2 rounded-xl focus:border-primary focus:bg-background transition-all duration-300 placeholder:text-muted-foreground"
+                  />
+                </div>
+
+                {/* Toss Details */}
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-foreground/80 uppercase tracking-wide">
+                      Toss Winner
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <select
+                        name="tossWinner"
+                        value={matchForm.tossWinner}
+                        onChange={handleChange}
+                        required
+                        className="
+              appearance-none w-full
+              px-4 py-3 sm:px-6 sm:py-4
+              text-base sm:text-lg bg-white
+              border border-gray-300
+              rounded-xl shadow-sm
+              focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary
+              transition-all duration-300
+            "
+                      >
+                        <option value="" disabled>
+                          Select toss winner
+                        </option>
+                        <option value={matchForm.teamA}>{matchForm.teamA}</option>
+                        <option value={matchForm.teamB}>{matchForm.teamB}</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="space-y-2 w-full max-w-md mx-auto">
+                    <label
+                      htmlFor="matchType"
+                      className="block text-sm font-semibold text-foreground/90 uppercase tracking-wide"
+                    >
+                      Match Type
+                    </label>
+                    <div className="relative">
+                      <select
+                        id="matchType"
+                        name="matchType"
+                        value={matchForm.matchType}
+                        onChange={handleChange}
+                        required
+                        className="
+                appearance-none w-full
+                px-4 py-3 sm:px-6 sm:py-4
+                text-base sm:text-lg bg-white
+                border border-gray-300
+                rounded-xl shadow-sm
+                focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary
+                transition duration-300
+                cursor-pointer
+                disabled:bg-gray-100
+                md:w-full md:max-w-md
+              "
+                      >
+                        <option value="" disabled>
+                          Select match type
+                        </option>
+                        <option value="T20">T20</option>
+                        <option value="ODI">ODI</option>
+                        <option value="Test">Test</option>
+                        <option value="T10">T10</option>
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                        <svg
+                          className="w-5 h-5 text-gray-400"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Toss Decision */}
+                <div className="space-y-2 max-w-md">
+                  <label className="text-sm font-semibold text-foreground/80 uppercase tracking-wide">
+                    Toss Decision
+                  </label>
+                  <select
+                    name="tossDecision"
+                    value={matchForm.tossDecision}
+                    onChange={handleChange}
+                    required
+                    className="w-full p-4 text-sm sm:text-base bg-background/50 border-2 rounded-xl focus:border-primary focus:bg-background transition-all duration-300"
+                  >
+                    <option value="" disabled>
+                      Select decision
+                    </option>
+                    <option value="bat">Chose to Bat</option>
+                    <option value="field">Chose to Field</option>
+                  </select>
+                </div>
 
                 {/* Submit Button */}
                 <button

@@ -4,6 +4,7 @@ import admin from '../../../app/firebaseadmin';
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const authHeader = request.headers.get('authorization');
+  console.log('Authorization Header:', authHeader);
   
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return NextResponse.json(
