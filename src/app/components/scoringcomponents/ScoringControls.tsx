@@ -531,7 +531,7 @@ useEffect(() => {
     
 
     const checkBowler = latestInning.bowlingTeam?.recentBowler as unknown as string;
-
+    console.log('checkBowler', checkBowler);
     if (
       checkBowler?.trim().toLowerCase() === trimmedBowler.trim().toLowerCase()
     ) {

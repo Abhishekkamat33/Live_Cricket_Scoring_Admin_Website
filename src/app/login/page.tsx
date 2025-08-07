@@ -14,13 +14,9 @@ import { auth, db } from "@/firebaseConfig";
 
 type Player = { name: string };
 
-interface MatchData {
-  teamA: { name: string; benchPlayers?: Player[] };
-  teamB: { name: string; benchPlayers?: Player[] };
-}
 
-// Assuming this is used somewhere, otherwise remove
-// updateMatchData: (updatedData: MatchData) => Promise<void>;
+
+
 
 export default function LoginPage() {
   const router = useRouter();

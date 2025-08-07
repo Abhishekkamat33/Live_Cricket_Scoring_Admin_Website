@@ -168,6 +168,7 @@ const ScoreBoard: React.FC = () => {
     setIsWinner('');
   };
 
+  console.log(iswinner);
   if (iswinner || result) {
     return (
       <WinnerAnimation winner={iswinner} onClose={handleWinnerClose} />

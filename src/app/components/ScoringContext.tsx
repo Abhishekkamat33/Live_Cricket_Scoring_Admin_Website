@@ -3,7 +3,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { db } from '@/firebaseConfig';
 import { collection, doc, getDoc, increment, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
-import { match } from 'assert';
 
 type BallEntry = {
   name: string;
@@ -222,8 +221,7 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
 
 
   useEffect(() => {
-    if (!match_id || !iswinner) return
-    
+    if (!match_id) return
     if (iswinner !== '' || iswinner !== null || iswinner !== undefined) {
       const saveisWinner = async () => {
         await updateDoc(doc(db, 'matches', match_id), {
@@ -281,6 +279,8 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
           setStrikerName('');
           setNonStrikerName('');
           setCurrentBowler('');
+          setBattingTeam(null);
+          setBowlingTeam(null);
           setNewBatsman('');
           setOutBatsman('');
           setFielderName('');
@@ -572,8 +572,7 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
           await setDoc(doc(db, 'matches', match_id, 'innings', `inning${currentInning}`), inningData2);
           const matchDocRef = doc(db, 'matches', match_id);
           await updateDoc(matchDocRef, {
-            firstInningCompleted: true,
-            matchStatus: 'live'
+            firstInningCompleted: true
           });
           setIsSecondInning(false);
           // //console.log('Inning data saved successfully');
@@ -589,8 +588,7 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
         await setDoc(doc(db, 'matches', match_id, 'innings', `inning${currentInning}`), inningData);
         const matchDocRef = doc(db, 'matches', match_id);
         await updateDoc(matchDocRef, {
-          matchStatus: 'live',
-          matchStarted: true
+          matchStatus: 'live'
         });
       } catch (error) {
         console.error('Error saving inning data:', error);
@@ -691,6 +689,37 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
         });
 
 
+        setBowlingTeam((prev: TeamDetails | null): TeamDetails | null => {
+          if (prev === null) {
+            // return a default object or null if that makes sense
+            return null;
+          }
+          return {
+            ...prev,
+            bowlingOrder: updatedBowlingOrder,
+            name: prev.name || '',       // provide default empty string if missing
+            wickets: prev.wickets ?? 0,  // provide default 0 if missing
+            score: prev.score ?? 0,
+            overs: prev.overs ?? '0.0',
+            battingOrder: prev.battingOrder,
+            players: prev.players,
+            recentBowlerName: prev.recentBowlerName,
+            recentBowler: prev.recentBowler,
+            extras: prev.extras,
+            totalRuns: prev.totalRuns,
+            balls: prev.balls,
+            wides: prev.wides,
+            noBalls: prev.noBalls,
+            byes: prev.byes,
+            legByes: prev.legByes,
+            partnership: prev.partnership,
+            fallofWicket: prev.fallofWicket,
+            updatedAt: prev.updatedAt,
+            matchId: prev.matchId,
+          };
+        });
+
+
       } catch (error) {
         //console.error('Failed to update current bowler flag:', error);
       }
@@ -719,6 +748,7 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
         const bowlingOrder = inningData?.bowlingTeam?.bowlingOrder || [];
 
         const previousBowler = bowlingOrder.find((player: Player) => player.isCurrentBowler);
+        console.log(previousBowler.name);
 
 
         // If recentBowler is boolean true, then set isCurrentBowler = false for the current abowler
@@ -732,6 +762,36 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
             'bowlingTeam.bowlingOrder': updatedBowlingOrder,
             'bowlingTeam.recentBowler': previousBowler?.name,
           });
+          setBowlingTeam((prev: TeamDetails | null): TeamDetails | null => {
+            if (prev === null) {
+              // return a default object or null if that makes sense
+              return null;
+            }
+            return {
+              ...prev,
+              bowlingOrder: updatedBowlingOrder,
+              name: prev.name || '',       // provide default empty string if missing
+              wickets: prev.wickets ?? 0,  // provide default 0 if missing
+              score: prev.score ?? 0,
+              overs: prev.overs ?? '0.0',
+              battingOrder: prev.battingOrder,
+              players: prev.players,
+              recentBowlerName: prev.recentBowlerName,
+              recentBowler: prev.recentBowler,
+              extras: prev.extras,
+              totalRuns: prev.totalRuns,
+              balls: prev.balls,
+              wides: prev.wides,
+              noBalls: prev.noBalls,
+              byes: prev.byes,
+              legByes: prev.legByes,
+              partnership: prev.partnership,
+              fallofWicket: prev.fallofWicket,
+              updatedAt: prev.updatedAt,
+              matchId: prev.matchId,
+            };
+          });
+
         }
       } catch (error) {
         //console.error('Failed to update current bowler flag:', error);
@@ -1045,6 +1105,8 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
             }
           }
 
+        
+
           // Reset ball-level stats for next ball
           setBalls(0);
           setRuns(0);
@@ -1179,6 +1241,7 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
           }
 
 
+      
 
           // Reset ball-level stats
           setBalls(0);
@@ -1314,49 +1377,33 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
 
 useEffect(() => {
   const updateInningInFirestore = async () => {
-    if (!undo || !match_id || !fetchDataFirst) return;
+    if (inningData && undo) {
+      try {
+        const inningDocRef = doc(db, 'matches', match_id, 'innings', `inning${fetchDataFirst}`);
+        const matchDocRef = doc(db, 'matches', match_id);
 
-    try {
-      const inningDocRef = doc(db, 'matches', match_id, 'innings', `inning${fetchDataFirst}`);
-      const matchDocRef = doc(db, 'matches', match_id);
+        function flattenObject(obj: any, prefix = ''): Record<string, any> {
+          return Object.keys(obj).reduce((acc, k) => {
+            const pre = prefix.length ? `${prefix}.` : '';
+            const value = obj[k];
+            if (value && typeof value === 'object' && !Array.isArray(value)) {
+              Object.assign(acc, flattenObject(value, pre + k));
+            } else {
+              acc[pre + k] = value;
+            }
+            return acc;
+          }, {} as Record<string, any>);
+        }
 
-      const flatUndo = {
-        'battingTeam.name': undo.battingTeam.name,
-        'battingTeam.wickets': undo.battingTeam.wickets,
-        'battingTeam.score': undo.battingTeam.score,
-        'battingTeam.overs': undo.battingTeam.overs,
-        'battingTeam.battingOrder': undo.battingTeam.battingOrder,
-        'bowlingTeam.name': undo.bowlingTeam.name,
-        'bowlingTeam.wickets': undo.bowlingTeam.wickets,
-        'bowlingTeam.score': undo.bowlingTeam.score,
-        'bowlingTeam.overs': undo.bowlingTeam.overs,
-        'bowlingTeam.bowlingOrder': undo.bowlingTeam.bowlingOrder,
-        totalRuns: undo.totalRuns,
-        wickets: undo.wickets,
-        overs: undo.overs,
-        extras: undo.extras,
-        balls: undo.balls,
-        wides: undo.wides,
-        noBalls: undo.noBalls,
-        byes: undo.byes,
-        legByes: undo.legByes,
-        updatedAt: undo.updatedAt,
-        matchId: undo.matchId,
-        inningNumber: undo.inningNumber,
-        target: undo.target,
-        iswinner: undo.iswinner,
-      };
+        const flatUndo = flattenObject(undo);
 
-      await updateDoc(inningDocRef, flatUndo);
-      await updateDoc(matchDocRef, {
-        totalRuns: undo.totalRuns,
-        wickets: undo.wickets,
-        overs: undo.overs,
-      });
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error('Failed to update inningData in undo:', error.message);
-      } else {
+        await updateDoc(inningDocRef, flatUndo);
+        await updateDoc(matchDocRef, {
+          totalRuns: undo.totalRuns,
+          wickets: undo.wickets,
+          overs: undo.overs,
+        });
+      } catch (error) {
         console.error('Failed to update inningData in undo:', error);
       }
     }
@@ -1364,7 +1411,6 @@ useEffect(() => {
 
   updateInningInFirestore();
 }, [undo]);
-
 
 
   const [matchLiveSet, setMatchLiveSet] = useState(false);
