@@ -10,7 +10,7 @@ import {
 import { useParams, useRouter } from 'next/navigation';
 import Benchplayer from '@/app/playerComponents/Benchplayer';
 import SupportStaff from '../../playerComponents/SupportStaff';
-import { FaUser, FaCrown, FaEdit, FaTrash, FaPlus, FaSave, FaTimes, FaCamera} from 'react-icons/fa';
+import { FaUser, FaCrown, FaEdit, FaTrash, FaPlus, FaSave, FaTimes, FaCamera } from 'react-icons/fa';
 import { uploadImageToCloudinary } from '@/app/utility/fetchImage';
 import Image from 'next/image';
 
@@ -33,10 +33,10 @@ interface SupportingStaff {
 
 interface Team {
   name: string;
-  players: Player[];
-  overs: number;
-  wickets: number;
-  score: number;
+  players?: Player[];
+  overs?: number;
+  wickets?: number;
+  score?: number;
   benchPlayers?: Player[];
   extraPlayers?: Player[];
   supportingStaff?: SupportingStaff[];
@@ -50,63 +50,57 @@ interface MatchData {
   supportingStaff?: SupportingStaff[];
 }
 
-const roles = ['Batsman', 'Bowler', 'All-Rounder', 'Wicketkeeper', 'Coach', 'Physio', 'Manager', 'Support'];
+const roles = ['Batsman', 'Bowler', 'All-Rounder', 'Wicketkeeper', 'Coach', 'Physio', 'Manager', 'Support'] as const;
+type Role = typeof roles[number];
 
 interface ManagePlayersProps {
   matchId?: string;
 }
 
-
-
 export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersProps) {
-  const { id } = useParams();
+  const params = useParams();
   const router = useRouter();
-  const matchId = propMatchId ?? (id as string);
 
+  // Fix the id parameter type
+  const id = typeof params?.id === 'string' ? params.id : Array.isArray(params?.id) ? params.id[0] : '';
+  const matchId = propMatchId ?? id;
 
-   useEffect(() => {
-      async function verifySession() {
-        const response = await fetch('/api/protected');
-        if (response.status === 401) {
-          alert('You are not authorized. Contact with admin.');
-          // If unauthorized => redirect to login page
-          router.push('/login');
-        } else {
-          // If authorized, you can load or show data as needed
-         await response.json();
-       
-        
-        }
+  useEffect(() => {
+    async function verifySession() {
+      const response = await fetch('/api/protected');
+      if (response.status === 401) {
+        alert('You are not authorized. Contact with admin.');
+        router.push('/login');
+      } else {
+        await response.json();
       }
-  
-      verifySession();
-    }, [matchId, router]);
-  
-  const [loading, setLoading] = useState(false);
+    }
+    verifySession();
+  }, [matchId, router]);
+
+  const [loading, setLoading] = useState<boolean>(false);
   const [matchData, setMatchData] = useState<MatchData | null>(null);
 
   // Main Player States
-  const [playerName, setPlayerName] = useState('');
-  const [playerRole, setPlayerRole] = useState(roles[0]);
+  const [playerName, setPlayerName] = useState<string>('');
+  const [playerRole, setPlayerRole] = useState<Role>(roles[0]);
   const [playerImageFile, setPlayerImageFile] = useState<File | null>(null);
-  const [selectedTeamName, setSelectedTeamName] = useState('');
-  const [isCaptainNewPlayer, setIsCaptainNewPlayer] = useState(false);
-
+  const [selectedTeamName, setSelectedTeamName] = useState<string>('');
+  const [isCaptainNewPlayer, setIsCaptainNewPlayer] = useState<boolean>(false);
 
   // Editing States
   const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
   const [editingTeamName, setEditingTeamName] = useState<string | null>(null);
-  const [editName, setEditName] = useState('');
-  const [editRole, setEditRole] = useState(roles[0]);
+  const [editName, setEditName] = useState<string>('');
+  const [editRole, setEditRole] = useState<Role>(roles[0]);
   const [editImageFile, setEditImageFile] = useState<File | null>(null);
-  const [isCaptainEditPlayer, setIsCaptainEditPlayer] = useState(false);
+  const [isCaptainEditPlayer, setIsCaptainEditPlayer] = useState<boolean>(false);
 
   // CSS variables for cricket green
   const cricketGreenStyle = {
-    '--cricket-green': '120 60% 25%'
+    '--cricket-green': '120 60% 25%',
   } as React.CSSProperties;
 
-  // Fetch match data
   useEffect(() => {
     if (!matchId) return;
 
@@ -123,7 +117,8 @@ export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersPro
           alert('Match not found!');
           setMatchData(null);
         }
-      } catch {
+      } catch (error) {
+        console.error('Error fetching match data:', error);
         alert('Failed to load match data.');
       } finally {
         setLoading(false);
@@ -133,14 +128,11 @@ export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersPro
     fetchMatch();
   }, [matchId]);
 
-  // Update Firestore match data
-  const updateMatchData = async (updatedData: Partial<MatchData>) => {
+ const updateMatchData = async (updatedData: Partial<MatchData>) => {
     if (!matchId) return;
-  
 
     try {
       const docRef = doc(db, 'matches', matchId);
-
       const docSnap = await getDoc(docRef);
       if (!docSnap.exists()) throw new Error('Match document does not exist');
       const currentData = docSnap.data() as MatchData;
@@ -153,63 +145,92 @@ export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersPro
         return { teamAItems, teamBItems };
       };
 
+      // Handle benchPlayers - add to existing arrays
       if (updatedData.benchPlayers) {
         const { teamAItems, teamBItems } = splitByTeam(updatedData.benchPlayers);
 
-        updatePayload.teamA = {
-          ...(updatePayload.teamA ?? currentData.teamA),
-          benchPlayers: [
-            ...(currentData.teamA.benchPlayers ?? []),
-            ...teamAItems,
-          ],
-        };
-        updatePayload.teamB = {
-          ...(updatePayload.teamB ?? currentData.teamB),
-          benchPlayers: [
-            ...(currentData.teamB.benchPlayers ?? []),
-            ...teamBItems,
-          ],
-        };
+        if (teamAItems.length > 0) {
+          updatePayload.teamA = {
+            ...currentData.teamA,
+            ...(updatePayload.teamA || {}),
+            benchPlayers: [
+              ...(currentData.teamA.benchPlayers ?? []),
+              ...teamAItems,
+            ],
+          };
+        }
+
+        if (teamBItems.length > 0) {
+          updatePayload.teamB = {
+            ...currentData.teamB,
+            ...(updatePayload.teamB || {}),
+            benchPlayers: [
+              ...(currentData.teamB.benchPlayers ?? []),
+              ...teamBItems,
+            ],
+          };
+        }
       }
 
+      // Handle supportingStaff - add to existing arrays
       if (updatedData.supportingStaff) {
         const { teamAItems, teamBItems } = splitByTeam(updatedData.supportingStaff);
 
+        if (teamAItems.length > 0) {
+          updatePayload.teamA = {
+            ...currentData.teamA,
+            ...(updatePayload.teamA || {}),
+            supportingStaff: [
+              ...(currentData.teamA.supportingStaff ?? []),
+              ...teamAItems,
+            ],
+          };
+        }
+
+        if (teamBItems.length > 0) {
+          updatePayload.teamB = {
+            ...currentData.teamB,
+            ...(updatePayload.teamB || {}),
+            supportingStaff: [
+              ...(currentData.teamB.supportingStaff ?? []),
+              ...teamBItems,
+            ],
+          };
+        }
+      }
+
+      // Handle direct team updates (for regular player operations)
+      if (updatedData.teamA) {
         updatePayload.teamA = {
-          ...(updatePayload.teamA ?? currentData.teamA),
-          supportingStaff: [
-            ...(currentData.teamA.supportingStaff ?? []),
-            ...teamAItems,
-          ],
-        };
-        updatePayload.teamB = {
-          ...(updatePayload.teamB ?? currentData.teamB),
-          supportingStaff: [
-            ...(currentData.teamB.supportingStaff ?? []),
-            ...teamBItems,
-          ],
+          ...currentData.teamA,
+          ...(updatePayload.teamA || {}),
+          ...updatedData.teamA,
         };
       }
 
-      const otherKeys = Object.keys(updatedData).filter(
-        (key) => key !== 'extraPlayers' && key !== 'benchPlayers' && key !== 'supportingStaff'
-      );
+      if (updatedData.teamB) {
+        updatePayload.teamB = {
+          ...currentData.teamB,
+          ...(updatePayload.teamB || {}),
+          ...updatedData.teamB,
+        };
+      }
 
-      otherKeys.forEach((key) => {
-        updatePayload[key as keyof MatchData] = updatedData[key as keyof MatchData] as any;
-      });
+      // Handle extraPlayers at match level
+      if (updatedData.extraPlayers !== undefined) {
+        updatePayload.extraPlayers = updatedData.extraPlayers;
+      }
 
       await updateDoc(docRef, updatePayload);
-      setMatchData((prev) => prev ? { ...prev, ...updatePayload } : prev);
+      setMatchData((prev) => (prev ? { ...prev, ...updatePayload } : prev));
     } catch (error) {
       console.error('Update failed:', error);
       alert('Failed to update match data.');
     }
   };
 
-  const unsetCurrentCaptain = (players: Player[]): Player[] => {
-    return players.map((p) => (p.isCaptain ? { ...p, isCaptain: false } : p));
-  };
+  const unsetCurrentCaptain = (players: Player[]): Player[] =>
+    players.map((p) => (p.isCaptain ? { ...p, isCaptain: false } : p));
 
   const addPlayer = async () => {
     if (!playerName.trim()) {
@@ -223,15 +244,13 @@ export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersPro
     if (!matchData) return;
 
     const playerId = crypto.randomUUID();
-
-    const ImageFile = playerImageFile ? await uploadImageToCloudinary(playerImageFile) : '';
-   
+    const imageUrl = playerImageFile ? await uploadImageToCloudinary(playerImageFile) : '';
 
     const newPlayer: Player = {
       id: playerId,
       name: playerName.trim(),
       role: playerRole,
-      imageUrl: ImageFile || '',
+      imageUrl: imageUrl || '',
       isCaptain: isCaptainNewPlayer,
       teamName: selectedTeamName,
     };
@@ -260,14 +279,13 @@ export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersPro
     setPlayerRole(roles[0]);
     setPlayerImageFile(null);
     setIsCaptainNewPlayer(false);
-    setPlayerImageFile(null);
   };
 
   const startEditing = (player: Player, teamName: string) => {
     setEditingPlayerId(player.id);
     setEditingTeamName(teamName);
     setEditName(player.name);
-    setEditRole(player.role);
+    setEditRole(player.role as Role);
     setIsCaptainEditPlayer(player.isCaptain ?? false);
     setEditImageFile(null);
   };
@@ -287,15 +305,13 @@ export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersPro
       return;
     }
 
-     const ImageFile = editImageFile ? await uploadImageToCloudinary(editImageFile) : '';
- 
+    const imageUrl = editImageFile ? await uploadImageToCloudinary(editImageFile) : '';
 
-    const updatePlayers =  (players: Player[]): Player[] => {
+    const updatePlayers = (players: Player[]): Player[] => {
       let updatedPlayers = players;
       if (isCaptainEditPlayer) {
         updatedPlayers = unsetCurrentCaptain(updatedPlayers);
       }
-       
 
       return updatedPlayers.map((p) =>
         p.id === editingPlayerId
@@ -303,7 +319,7 @@ export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersPro
             ...p,
             name: editName.trim(),
             role: editRole,
-            imageUrl: ImageFile ?? p.imageUrl,
+            imageUrl: imageUrl || p.imageUrl,
             isCaptain: isCaptainEditPlayer,
           }
           : p
@@ -311,9 +327,11 @@ export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersPro
     };
 
     if (editingTeamName === matchData.teamA.name) {
-      await updateMatchData({ teamA: { ...matchData.teamA, players: updatePlayers(matchData.teamA.players) } });
+      const currentPlayers = matchData.teamA.players ?? [];
+      await updateMatchData({ teamA: { ...matchData.teamA, players: updatePlayers(currentPlayers) } });
     } else if (editingTeamName === matchData.teamB.name) {
-      await updateMatchData({ teamB: { ...matchData.teamB, players: updatePlayers(matchData.teamB.players) } });
+      const currentPlayers = matchData.teamB.players ?? [];
+      await updateMatchData({ teamB: { ...matchData.teamB, players: updatePlayers(currentPlayers) } });
     }
 
     cancelEditing();
@@ -324,10 +342,10 @@ export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersPro
     if (!confirm('Are you sure you want to delete this player?')) return;
 
     if (teamName === matchData.teamA.name) {
-      const updatedPlayers = matchData.teamA.players.filter((p) => p.id !== playerId);
+      const updatedPlayers = (matchData.teamA.players ?? []).filter((p) => p.id !== playerId);
       await updateMatchData({ teamA: { ...matchData.teamA, players: updatedPlayers } });
     } else if (teamName === matchData.teamB.name) {
-      const updatedPlayers = matchData.teamB.players.filter((p) => p.id !== playerId);
+      const updatedPlayers = (matchData.teamB.players ?? []).filter((p) => p.id !== playerId);
       await updateMatchData({ teamB: { ...matchData.teamB, players: updatedPlayers } });
     }
   };
@@ -338,13 +356,12 @@ export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersPro
 
   if (loading || !matchData) {
     return (
-      <div 
+      <div
         className="min-h-screen bg-[radial-gradient(circle_at_50%_50%,_hsl(var(--cricket-green))_2px,_transparent_2px)] bg-[length:60px_60px] flex items-center justify-center"
         style={cricketGreenStyle}
       >
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-2xl">
           <div className="flex items-center space-x-3">
-            {/* <FaCricketBall className="text-green-600 animate-spin" size={24} /> */}
             <p className="text-xl font-semibold text-gray-800">Loading match data...</p>
           </div>
         </div>
@@ -353,12 +370,11 @@ export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersPro
   }
 
   const renderImage = (url?: string, alt?: string) =>
-   
     url ? (
-     <Image
+      <Image
         src={url}
         alt={alt ?? ''}
-        width={56} // corresponds to w-14 in Tailwind (14*4px)
+        width={56}
         height={56}
         className="rounded-full object-cover border-3 border-white shadow-lg"
       />
@@ -369,8 +385,8 @@ export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersPro
     );
 
   return (
-    <div 
-      className="min-h-screen  py-4 sm:py-8"
+    <div
+      className="min-h-screen py-4 sm:py-8"
       style={cricketGreenStyle}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -378,7 +394,6 @@ export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersPro
         <div className="text-center mb-8 sm:mb-12">
           <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 sm:p-8 shadow-2xl border border-green-200">
             <div className="flex items-center justify-center mb-4">
-              {/* <FaCricketBall className="text-green-600 mr-3" size={32} /> */}
               <h1 className="text-2xl sm:text-4xl font-bold text-gray-800">Player Management</h1>
             </div>
             <p className="text-lg sm:text-xl text-gray-600">
@@ -393,7 +408,7 @@ export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersPro
             <FaPlus className="text-green-600 mr-3" />
             Add New Player
           </h2>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
             <div className="sm:col-span-2 lg:col-span-1">
               <label className="block text-sm font-medium text-gray-700 mb-2">Player Name</label>
@@ -405,7 +420,7 @@ export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersPro
                 className="w-full border-2 border-gray-300 rounded-xl p-3 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Team</label>
               <select
@@ -417,12 +432,12 @@ export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersPro
                 <option value={matchData.teamB.name}>{matchData.teamB.name}</option>
               </select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
               <select
                 value={playerRole}
-                onChange={(e) => setPlayerRole(e.target.value)}
+                onChange={(e) => setPlayerRole(e.target.value as Role)}
                 className="w-full border-2 border-gray-300 rounded-xl p-3 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200"
               >
                 {roles
@@ -434,7 +449,7 @@ export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersPro
                   ))}
               </select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Photo</label>
               <div className="relative">
@@ -447,7 +462,7 @@ export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersPro
                 <FaCamera className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
             </div>
-            
+
             <div className="flex flex-col justify-end">
               <div className="flex items-center mb-3">
                 <input
@@ -484,8 +499,8 @@ export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersPro
                   {team?.players?.length || 0}
                 </span>
               </h3>
-              
-              {team?.players?.length === 0 ? (
+
+              {(team?.players?.length ?? 0) === 0 ? (
                 <div className="text-center py-8">
                   <FaUser className="text-gray-300 mx-auto mb-4" size={48} />
                   <p className="text-gray-500 text-lg">No players added yet</p>
@@ -508,11 +523,11 @@ export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersPro
                               className="flex-1 border-2 border-gray-300 rounded-lg p-2 focus:border-green-500 focus:ring-2 focus:ring-green-200"
                             />
                           </div>
-                          
+
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <select
                               value={editRole}
-                              onChange={(e) => setEditRole(e.target.value)}
+                              onChange={(e) => setEditRole(e.target.value as Role)}
                               className="border-2 border-gray-300 rounded-lg p-2 focus:border-green-500 focus:ring-2 focus:ring-green-200"
                             >
                               {roles
@@ -523,7 +538,7 @@ export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersPro
                                   </option>
                                 ))}
                             </select>
-                            
+
                             <input
                               type="file"
                               accept="image/*"
@@ -531,7 +546,7 @@ export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersPro
                               className="border-2 border-gray-300 rounded-lg p-2 focus:border-green-500 focus:ring-2 focus:ring-green-200"
                             />
                           </div>
-                          
+
                           <div className="flex items-center justify-between">
                             <div className="flex items-center">
                               <input
@@ -546,7 +561,7 @@ export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersPro
                                 Captain
                               </label>
                             </div>
-                            
+
                             <div className="flex space-x-2">
                               <button
                                 onClick={saveEdit}
@@ -580,7 +595,7 @@ export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersPro
                               <p className="text-gray-600 text-sm">{player.role}</p>
                             </div>
                           </div>
-                          
+
                           <div className="flex space-x-2 ml-4">
                             <button
                               onClick={() => startEditing(player, team.name)}
@@ -616,38 +631,17 @@ export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersPro
         {/* Start Match Button */}
         <div className="text-center">
           <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-6 sm:p-8 shadow-2xl border border-green-200">
-            {matchData?.teamA?.players?.length >= 4 && matchData?.teamB?.players?.length >= 4 ? (
-              <button
-                onClick={startMatch}
-                className="bg-gradient-to-r from-green-600 to-green-700 text-white rounded-2xl px-8 py-4 text-xl font-bold hover:from-green-700 hover:to-green-800 transition-all duration-300 transform hover:scale-105 shadow-2xl flex items-center mx-auto"
-              >
-                {/* <FaCricketBall className="mr-3 animate-pulse" /> */}
-                Start Match
-              </button>
-            ) : (
-              <div>
-                <button
-                  disabled
-                  className="bg-gray-400 text-white rounded-2xl px-8 py-4 text-xl font-bold cursor-not-allowed opacity-50 flex items-center mx-auto mb-4"
-                >
-                  {/* <FaCricketBall className="mr-3" /> */}
-                  Start Match
-                </button>
-                <p className="text-gray-600 text-sm">
-                  Add at least 4 players per team to start the match
-                </p>
-                <div className="flex justify-center mt-4 space-x-8">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">{matchData?.teamA?.players?.length || 0}/4</div>
-                    <div className="text-sm text-gray-600">{matchData.teamA.name}</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-red-600">{matchData?.teamB?.players?.length || 0}/4</div>
-                    <div className="text-sm text-gray-600">{matchData.teamB.name}</div>
-                  </div>
-                </div>
-              </div>
-            )}
+
+            <button
+              onClick={startMatch}
+              className="bg-gradient-to-r from-green-600 to-green-700 text-white rounded-2xl px-8 py-4 text-xl font-bold hover:from-green-700 hover:to-green-800 transition-all duration-300 transform hover:scale-105 shadow-2xl flex items-center mx-auto"
+            >
+              Start Match
+            </button>
+
+          </div>
+          <div className="text-center mt-4">
+            <p className="text-gray-600 text-sm">You can start the match now. Once started, you cannot make any more changes.</p>
           </div>
         </div>
       </div>

@@ -55,15 +55,6 @@ export const SaleSection = () => {
     },
   ];
 
-  // Button styles based on variant
-  const buttonStyles = {
-    outline:
-      "border border-primary rounded-xl text-primary font-semibold hover:bg-primary hover:text-white transition-colors duration-300 py-4 text-lg w-full",
-    hero: "bg-gradient-to-r from-primary to-accent text-white rounded-xl font-semibold hover:from-primary/90 hover:to-accent/90 shadow-lg transition-all duration-300 py-4 text-lg w-full flex items-center justify-center gap-2 transform hover:scale-[1.02]",
-    default:
-      "bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition-colors duration-300 py-4 text-lg w-full",
-  };
-
   return (
     <section
       id="pricing"
@@ -88,12 +79,12 @@ export const SaleSection = () => {
           </div>
           <h2 className="text-4xl lg:text-5xl font-extrabold text-foreground mb-6">
             Choose Your{" "}
-            <span className="text-primary bg-gradient-to-r from-primary via-cricket-brown to-accent bg-clip-text text-transparent">
+            <span className="text bg-gradient-to-r from-primary via-cricket-brown to-accent bg-clip-text text-transparent">
               Cricket Journey
             </span>
           </h2>
           <p className="text-xl text-muted-foreground mx-auto max-w-xl leading-relaxed">
-            Whether you're a weekend warrior or running a professional league, we
+            Whether you&apos;re a weekend warrior or running a professional league, we
             have the perfect plan to elevate your cricket experience.
           </p>
         </div>
@@ -167,17 +158,14 @@ export const SaleSection = () => {
               </ul>
 
               <button
-
-              onClick={()=>{router.push('/login')}}
+                onClick={() => { router.push('/login') }}
                 type="button"
                 className="btn h-12 w-full border border-primary rounded-md text-primary hover:bg-primary hover:text-card hover:shadow-lg hover:-translate-y-1"
-                // you may want to attach onClick events here for actual behavior
               >
                 {plan.popular && (
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                className="inline w-5 h-5 mr-2 stroke-current"
-                 
+                    className="inline w-5 h-5 mr-2 stroke-current"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
                     strokeWidth={2}

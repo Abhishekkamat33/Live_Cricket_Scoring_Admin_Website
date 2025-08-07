@@ -19,8 +19,9 @@ const Index = () => {
   // Team logo files and preview URLs
   const [teamALogoFile, setTeamALogoFile] = useState<File | null>(null);
   const [teamBLogoFile, setTeamBLogoFile] = useState<File | null>(null);
-  const [teamALogoPreview, setTeamALogoPreview] = useState('');
-  const [teamBLogoPreview, setTeamBLogoPreview] = useState('');
+
+  const [teamALogoPreview, setTeamALogoPreview] = useState(defaultTeamALogo);
+  const [teamBLogoPreview, setTeamBLogoPreview] = useState(defaultTeamBLogo);
 
   const [matchForm, setMatchForm] = useState({
     teamA: '',
@@ -84,10 +85,7 @@ const Index = () => {
     const matchId = uuid.v4();
 
     try {
-      // Here you can upload teamALogoFile and teamBLogoFile to storage and get URLs, for demo leaving empty
-      // const teamALogoUrl = teamALogoFile ? teamALogoPreview : defaultTeamALogo;
-      // const teamBLogoUrl = teamBLogoFile ? teamBLogoPreview : defaultTeamBLogo;
-
+  
       const ImageFile = teamALogoFile ? await uploadImageToCloudinary(teamALogoFile) : '';
       const ImageFile2 = teamBLogoFile ? await uploadImageToCloudinary(teamBLogoFile) : '';
 

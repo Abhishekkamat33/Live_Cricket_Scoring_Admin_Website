@@ -35,39 +35,7 @@ interface Staff {
   role: string;
 }
 
-interface BattingTeam {
-  battingOrder: Player[];
-  players?: Player[];
-  recentBowlerName?: string;
-}
 
-interface BowlingTeam {
-  bowlingOrder: Player[];
-  recentBowler?: Player;
-  recentBowlerName?: string;
-}
-
-interface TeamDetails {
-  name: string;
-  score: number;
-  wickets: number;
-  overs: string;
-  players: Player[];
-  battingOrder?: Player[];    // For batting team
-  bowlingOrder?: Player[];    // For bowling team
-  benchPlayers?: Player[];
-  supportingStaff?: Staff[];
-  recentBowlerName?: string;
-  recentBowler?: Player;
-  extras?: number;
-  totalRuns?: number;
-  balls?: number;
-  wides?: number;
-  noBalls?: number;
-  byes?: number;
-  legByes?: number;
-  // Additional optional properties
-}
 
 type Inning = {
   id?: string;
@@ -115,9 +83,12 @@ interface MatchTeam {
 interface MatchData {
   teamA: MatchTeam;
   teamB: MatchTeam;
-  tossWinner?: string;
-  tossDecision?: string;
-  matchType?: string;
+  tossWinner: string;
+  tossDecision: string;
+  matchType: string;
+  overPlayed: number;
+  matchWinner: string;
+  innings: Inning[];
 }
 
 interface ScoringControlsProps {
@@ -222,13 +193,13 @@ const ScoringControls: React.FC<ScoringControlsProps> = ({ matchId, matchData })
     const nonStriker = battingOrder.find((player:Player) => player.isNonStriker);
     const currentBowler = bowlingOrder.find((player: Player) => player.isCurrentBowler);
 
-    if (currentBowler === '' || currentBowler === null || currentBowler === undefined) {
+    if (currentBowler?.name === '' || currentBowler === null || currentBowler === undefined) {
       setNeedNewBowlerInput(true);
     }
-    if (striker === '' || striker === null || striker === undefined) {
+    if (striker?.name === '' || striker === null || striker === undefined) {
       setNeedNewBatsmanInput(true);
     }
-    if (nonStriker === '' || nonStriker === null || nonStriker === undefined) {
+    if (nonStriker?.name === '' || nonStriker === null || nonStriker === undefined) {
       setNeedNewBatsmanInput(true);
     }
 
@@ -277,7 +248,7 @@ useEffect(() => {
   }
 
   setLoading(false);
-}, [isSecondInning]);
+}, [isSecondInning , matchData]);
 
 
 
@@ -376,7 +347,7 @@ useEffect(() => {
     const strikerBatsmanLower = strikerBatsman?.toLowerCase().trim();
 
 
-    const newBatsmanPlayer = lastInning?.battingTeam.battingOrder.find(
+    const newBatsmanPlayer = lastInning?.battingTeam?.battingOrder?.find(
       (player: Player) => player.name.toLowerCase() === newBatsmanLower
     );
 
@@ -386,7 +357,7 @@ useEffect(() => {
     }
 
     const fielderPlayer = fielderName
-      ? lastInning?.bowlingTeam.bowlingOrder.find(
+      ? lastInning?.bowlingTeam?.bowlingOrder?.find(
           (player: Player) => player.name.toLowerCase() === fielderNameLower
         )
       : null;
@@ -489,8 +460,12 @@ useEffect(() => {
     }
 
     if (matchData) {
+
+ 
+      
       const battingNames = battingTeam?.players?.map((p: Player) => p.name);
 
+    
    
 
       if (!battingNames?.includes(strikerBatsman)) {
@@ -553,7 +528,10 @@ useEffect(() => {
 
     const bowlingOrder = latestInning.bowlingTeam?.bowlingOrder || [];
 
-    const currentBowler = latestInning.bowlingTeam?.recentBowler;
+    
+
+    const checkBowler = latestInning.bowlingTeam?.recentBowler as unknown as string;
+
     if (
       checkBowler?.trim().toLowerCase() === trimmedBowler.trim().toLowerCase()
     ) {
@@ -561,10 +539,6 @@ useEffect(() => {
       return;
     }
 
-    if (currentBowler === trimmedBowler) {
-      alert('This bowler is already bowling the current over. Please select another bowler.');
-      return;
-    }
 
     const newBowlerExists = bowlingOrder.some((player: Player) => player.name === trimmedBowler);
     if (!newBowlerExists) {

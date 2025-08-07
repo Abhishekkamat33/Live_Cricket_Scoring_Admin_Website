@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import Header from './components/Header';
 import { HeroSection } from './components/HeroSection';
 import { TagSection } from './components/TagSection';

@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { db } from '@/firebaseConfig';
 import { collection, doc, getDoc, increment, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
+import { match } from 'assert';
 
 type BallEntry = {
   name: string;
@@ -47,6 +48,9 @@ interface Player {
   maiden?: number;
   playerWickets?: string[];
   bowlingAverage?: number;
+  wides?: number;
+  noBalls?: number;
+  batting_position?: number;
 }
 
 interface TeamDetails {
@@ -66,12 +70,27 @@ interface TeamDetails {
   noBalls?: number;
   byes?: number;
   legByes?: number;
-  partnership?: any[];
-  fallofWicket?: any[];
+  partnership?: Pratnership[];
+  fallofWicket?: Fallofwickets[];
   updatedAt?: string;
   matchId?: string;
 }
 
+
+
+interface Fallofwickets {
+  runAtFall: number;
+  overAtFall: string;
+  batsmanOut: string;
+  time: string;
+}
+interface Pratnership {
+  runs: number;
+  wicketno: number;
+  batsman1: string;
+  batsman2: string;
+
+}
 interface Inning {
   id?: string;
   battingTeam: TeamDetails;
@@ -92,6 +111,16 @@ interface Inning {
   iswinner?: string;
 }
 
+interface MatchData {
+  teamA: TeamDetails;
+  teamB: TeamDetails;
+  innings: Inning[];
+  overPlayed: number;
+  tossWinner: string;
+  tossDecision: string;
+  matchWinner: string;
+}
+
 type ScoringContextType = {
   runs: number; setRuns: React.Dispatch<React.SetStateAction<number>>;
   extras: number; setExtras: React.Dispatch<React.SetStateAction<number>>;
@@ -109,7 +138,7 @@ type ScoringContextType = {
   strike: boolean; setStrike: React.Dispatch<React.SetStateAction<boolean>>;
   match_id: string; setMatch_id: React.Dispatch<React.SetStateAction<string>>;
   currentInning: number; setCurrentInning: React.Dispatch<React.SetStateAction<number>>;
-  match_data: any; setMatch_data: React.Dispatch<React.SetStateAction<any>>;
+  match_data: MatchData | null; setMatch_data: React.Dispatch<React.SetStateAction<MatchData | null>>;
   loading: boolean; setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   battingTeam: TeamDetails | null; setBattingTeam: React.Dispatch<React.SetStateAction<TeamDetails | null>>;
   bowlingTeam: TeamDetails | null; setBowlingTeam: React.Dispatch<React.SetStateAction<TeamDetails | null>>;
@@ -126,7 +155,6 @@ type ScoringContextType = {
   iswinner: string; setIsWinner: React.Dispatch<React.SetStateAction<string>>;
   undo: Inning | null; setUndo: React.Dispatch<React.SetStateAction<Inning | null>>;
   recentBowler: boolean; setRecentBowler: React.Dispatch<React.SetStateAction<boolean>>;
-  // commentaryArray: CommentaryEntry[]; setCommentaryArray: React.Dispatch<React.SetStateAction<CommentaryEntry[]>>;
   strikeSwapInProgress: boolean; setStrikeSwapInProgress: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
@@ -149,7 +177,8 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
   const [match_id, setMatch_id] = useState('');
   const [strike, setStrike] = useState(false);
   const [strikeSwapInProgress, setStrikeSwapInProgress] = useState(false);
-  const [match_data, setMatch_data] = useState<any>(null);
+  const [match_data, setMatch_data] = useState<MatchData | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [battingTeam, setBattingTeam] = useState<TeamDetails | null>(null);
   const [bowlingTeam, setBowlingTeam] = useState<TeamDetails | null>(null);
@@ -172,14 +201,14 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
 
 
   // Helper functions
-  const oversToBalls = (oversStr: string): number => {
-    if (!oversStr) return 0;
-    const [whole, part] = oversStr.split('.');
-    return (parseInt(whole) * 6) + (parseInt(part) || 0);
-  };
+  // const oversToBalls = (oversStr: string): number => {
+  //   if (!oversStr) return 0;
+  //   const [whole, part] = oversStr.split('.');
+  //   return (parseInt(whole) * 6) + (parseInt(part) || 0);
+  // };
 
   const ballsToOvers = (ballsCount: number): string => {
- 
+
 
     const whole = Math.floor(ballsCount / 6);
     const part = ballsCount % 6;
@@ -193,7 +222,8 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
 
 
   useEffect(() => {
-    if (!match_id) return
+    if (!match_id || !iswinner) return
+    
     if (iswinner !== '' || iswinner !== null || iswinner !== undefined) {
       const saveisWinner = async () => {
         await updateDoc(doc(db, 'matches', match_id), {
@@ -206,7 +236,7 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
     }
     return
 
-  }, [iswinner,])
+  }, [iswinner, match_id])
 
   // Initialize React state from Firestore when match_id or currentInning changes
   useEffect(() => {
@@ -226,11 +256,11 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
 
 
           const battingOrder = data.battingTeam?.battingOrder ?? [];
-          setStrikerName(battingOrder.find((p: any) => p.isStriker)?.name ?? '');
-          setNonStrikerName(battingOrder.find((p: any) => p.isNonStriker)?.name ?? '');
+          setStrikerName(battingOrder.find((p: Player) => p.isStriker)?.name ?? '');
+          setNonStrikerName(battingOrder.find((p: Player) => p.isNonStriker)?.name ?? '');
 
           const bowlingOrder = data.bowlingTeam?.bowlingOrder ?? [];
-          setCurrentBowler(bowlingOrder.find((p: any) => p.isCurrentBowler)?.name ?? '');
+          setCurrentBowler(bowlingOrder.find((p: Player) => p.isCurrentBowler)?.name ?? '');
 
           // Reset wicket-related states
           setNewBatsman('');
@@ -251,8 +281,6 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
           setStrikerName('');
           setNonStrikerName('');
           setCurrentBowler('');
-          setBattingTeam(null);
-          setBowlingTeam(null);
           setNewBatsman('');
           setOutBatsman('');
           setFielderName('');
@@ -265,34 +293,34 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
 
 
     fetchInningData();
-  }, [fetchDataFirst]);
+  }, [fetchDataFirst, match_id]);
 
 
   // Listen to inning collection realtime updates (optional, for UI sync)
-useEffect(() => {
-  if (!match_id) return;
+  useEffect(() => {
+    if (!match_id) return;
 
-  const inningsRef = collection(db, 'matches', match_id, 'innings');
+    const inningsRef = collection(db, 'matches', match_id, 'innings');
 
-  const unsubscribe = onSnapshot(
-    inningsRef,
-    (snapshot) => {
-      const inningsData = snapshot.docs.map(doc => {
-        const data = doc.data() as Omit<Inning, 'id'>;  // Firestore data without id
-        return { id: doc.id, ...data } as Inning;
-      });
-      setInningData(inningsData);
-    },
-    (error) => {
-      //console.error('Error fetching realtime innings:', error);
-    }
-  );
+    const unsubscribe = onSnapshot(
+      inningsRef,
+      (snapshot) => {
+        const inningsData = snapshot.docs.map(doc => {
+          const data = doc.data() as Omit<Inning, 'id'>;  // Firestore data without id
+          return { id: doc.id, ...data } as Inning;
+        });
+        setInningData(inningsData);
+      },
+      (error) => {
+        //console.error('Error fetching realtime innings:', error);
+      }
+    );
 
-  return () => unsubscribe();
-}, [match_id]);
+    return () => unsubscribe();
+  }, [match_id]);
 
 
-  const fixedOver = match_data?.overPlayed;
+  const fixedOver = match_data?.overPlayed || 0;
 
 
 
@@ -358,7 +386,7 @@ useEffect(() => {
     // Start second inning if overs completed
     if (totalBalls >= fixedBalls) {
       setIsSecondInning(true);
-      
+
       setOvers("0.0");
       setBalls(0);
       setRuns(0);
@@ -386,7 +414,7 @@ useEffect(() => {
 
 
 
-      const battingOrder = battingTeam.players?.map((player: any) => ({
+      const battingOrder = battingTeam.players?.map((player: Player) => ({
         name: player.name,
         runs: player.runs ?? 0,
         balls: player.balls ?? 0,
@@ -406,7 +434,7 @@ useEffect(() => {
         }
       })) || [];
 
-      const bowlingOrder = bowlingTeam.players?.map((player: any) => ({
+      const bowlingOrder = bowlingTeam.players?.map((player: Player) => ({
         name: player.name,
         overs: player.overs ?? "0.0",
         runs: player.runs ?? 0,
@@ -419,8 +447,8 @@ useEffect(() => {
         strikeRate: player.strikeRate ?? 0,
         isCurrentBowler: player.name === currentBowler,
         bowling_position: player.name === currentBowler ? 1 : 0,
-        wides: player.wides ?? 0,
-        noBalls: player.noBalls ?? 0
+        wides: player?.wides ?? 0,
+        noBalls: player?.noBalls ?? 0
       })) || [];
 
 
@@ -468,7 +496,7 @@ useEffect(() => {
 
 
       if (currentInning === 2) {
-        const battingOrder = battingTeam.players?.map((player: any) => ({
+        const battingOrder = battingTeam.players?.map((player: Player) => ({
           name: player.name,
           runs: 0,
           balls: 0,
@@ -487,7 +515,7 @@ useEffect(() => {
           }
         })) || [];
 
-        const bowlingOrder = bowlingTeam.players?.map((player: any) => ({
+        const bowlingOrder = bowlingTeam.players?.map((player: Player) => ({
           name: player.name,
           overs: "0.0",
           runs: 0,
@@ -544,7 +572,8 @@ useEffect(() => {
           await setDoc(doc(db, 'matches', match_id, 'innings', `inning${currentInning}`), inningData2);
           const matchDocRef = doc(db, 'matches', match_id);
           await updateDoc(matchDocRef, {
-            firstInningCompleted: true
+            firstInningCompleted: true,
+            matchStatus: 'live'
           });
           setIsSecondInning(false);
           // //console.log('Inning data saved successfully');
@@ -560,7 +589,8 @@ useEffect(() => {
         await setDoc(doc(db, 'matches', match_id, 'innings', `inning${currentInning}`), inningData);
         const matchDocRef = doc(db, 'matches', match_id);
         await updateDoc(matchDocRef, {
-          matchStatus: 'live'
+          matchStatus: 'live',
+          matchStarted: true
         });
       } catch (error) {
         console.error('Error saving inning data:', error);
@@ -602,7 +632,7 @@ useEffect(() => {
         const inningData = inningSnap.data();
         const currentBattingOrder = inningData?.battingTeam?.battingOrder || [];
 
-        const updatedBattingOrder = currentBattingOrder.map((player: any) => {
+        const updatedBattingOrder = currentBattingOrder.map((player: Player) => {
           if (player.isStriker) {
             return { ...player, isStriker: false, isNonStriker: true };
           }
@@ -647,9 +677,9 @@ useEffect(() => {
         const inningData = inningSnap.data();
         const bowlingOrder = inningData?.bowlingTeam?.bowlingOrder || [];
 
-       
 
-        const updatedBowlingOrder = bowlingOrder.map((player: any) => ({
+
+        const updatedBowlingOrder = bowlingOrder.map((player: Player) => ({
           ...player,
           isCurrentBowler: player.name === currentBowler,
         }));
@@ -657,14 +687,10 @@ useEffect(() => {
 
         await updateDoc(inningDocRef, {
           'bowlingTeam.bowlingOrder': updatedBowlingOrder,
-          
+
         });
 
 
-        setBowlingTeam((prev: any) => ({
-          ...prev,
-          bowlingOrder: updatedBowlingOrder,
-        }));
       } catch (error) {
         //console.error('Failed to update current bowler flag:', error);
       }
@@ -692,25 +718,20 @@ useEffect(() => {
         const inningData = inningSnap.data();
         const bowlingOrder = inningData?.bowlingTeam?.bowlingOrder || [];
 
-        const previousBowler = bowlingOrder.find((player: any) => player.isCurrentBowler);
-        console.log(previousBowler.name);
-     
+        const previousBowler = bowlingOrder.find((player: Player) => player.isCurrentBowler);
+
 
         // If recentBowler is boolean true, then set isCurrentBowler = false for the current abowler
         if (recentBowler === true) {
-          const updatedBowlingOrder = bowlingOrder.map((player: any) => ({
+          const updatedBowlingOrder = bowlingOrder.map((player: Player) => ({
             ...player,
             isCurrentBowler: false,   // Clear all current bowler flags
           }));
 
           await updateDoc(inningDocRef, {
-            'bowlingTeam.bowlingOrder': updatedBowlingOrder,  
+            'bowlingTeam.bowlingOrder': updatedBowlingOrder,
             'bowlingTeam.recentBowler': previousBowler?.name,
           });
-          setBowlingTeam((prev: any) => ({
-            ...prev,
-            bowlingOrder: updatedBowlingOrder,
-          }));
         }
       } catch (error) {
         //console.error('Failed to update current bowler flag:', error);
@@ -772,10 +793,10 @@ useEffect(() => {
         const newTotalwides = inningData?.wides + wides;
         const six = runs === 6 ? 1 : 0;
         const four = runs === 4 ? 1 : 0;
-         const previousBowler = inningData?.bowlingTeam?.bowlingOrder.find((player: any) => player.isCurrentBowler)?.name || '';
-         if(previousBowler !== ''){
-         const recentBowlername = previousBowler
-         }
+        const previousBowler = inningData?.bowlingTeam?.bowlingOrder.find((player: Player) => player.isCurrentBowler)?.name || '';
+        if (previousBowler !== '') {
+          const recentBowlername = previousBowler
+        }
 
         const oversFormatted = calculateOvers(newTotalBalls);
         const currentBallInOver = (previousBalls + balls - 1) % 6;
@@ -794,7 +815,7 @@ useEffect(() => {
           const currentBowlingOrder = inningData?.bowlingTeam?.bowlingOrder ?? [];
 
           // Find out if the out batsman is striker or non-striker
-          const outPlayer = currentBattingOrder.find((p: any) => p.name === outBatsman);
+          const outPlayer = currentBattingOrder.find((p: Player) => p.name === outBatsman);
           const outIsStriker = outPlayer?.isStriker ?? false;
           const outIsNonStriker = outPlayer?.isNonStriker ?? false;
 
@@ -802,7 +823,7 @@ useEffect(() => {
           const runsAreOdd = runs % 2 === 1;
 
           // Update batting order
-          let updatedBattingOrder = currentBattingOrder.map((player: any) => {
+          let updatedBattingOrder = currentBattingOrder.map((player: Player) => {
             if (player.name === outBatsman) {
               // Mark out batsman as out and update runs/balls
               return {
@@ -811,7 +832,7 @@ useEffect(() => {
                 balls: (player.balls ?? 0) + balls,
                 isStriker: false,
                 isNonStriker: false,
-                runs: player.runs + runs,
+                runs: (player.runs ?? 0) + runs,
                 howOut: {
                   by: fielderName || '',
                   howOut: wicketType || '',
@@ -878,18 +899,18 @@ useEffect(() => {
             return player;
           });
           // Prevent adding new batsman if already out
-          const existingBatsman = currentBattingOrder.find((p: any) => p.name === newBatsman);
+          const existingBatsman = currentBattingOrder.find((p: Player) => p.name === newBatsman);
           if (existingBatsman && existingBatsman.isOut) {
             alert(`Player "${newBatsman}" is already out. Please select a different batsman.`);
             return; // Stop execution
           }
 
 
-          const maxPosition = updatedBattingOrder.reduce((max: number, player: any) => {
+          const maxPosition = updatedBattingOrder.reduce((max: number, player: Player) => {
             return player.batting_position && player.batting_position > max ? player.batting_position : max;
           }, 0);
           // Add new batsman if not present and not out
-          const newBatsmanExists = updatedBattingOrder.some((p: any) => p.name === newBatsman);
+          const newBatsmanExists = updatedBattingOrder.some((p: Player) => p.name === newBatsman);
           if (!newBatsmanExists && newBatsman) {
             // Get current maximum batting_position or 0 if none
             updatedBattingOrder.push({
@@ -914,7 +935,7 @@ useEffect(() => {
             ['caught', 'lbw', 'bowled', 'stumped'].includes(wicketType)
           ) {
             if (runs % 2 === 0) {
-              updatedBattingOrder = updatedBattingOrder.map((player: any) => {
+              updatedBattingOrder = updatedBattingOrder.map((player: Player) => {
                 if (player.isStriker) return { ...player, isStriker: false, isNonStriker: true, batting_position: maxPosition + 1 };
                 if (player.isNonStriker) return { ...player, isStriker: true, isNonStriker: false, batting_position: maxPosition + 1 };
                 return player;
@@ -923,12 +944,12 @@ useEffect(() => {
           }
 
           // Update bowling order with bowler stats
-          const updatedBowlingOrder = currentBowlingOrder.map((player: any) => {
+          const updatedBowlingOrder = currentBowlingOrder.map((player: Player) => {
             if (player.name === currentBowler) {
               const previousBallsBowled = player.balls ?? 0;
               const previousWickets = player.wickets ?? 0;
               const previousRunsConceded = player.runs ?? 0;
-              const previousNoballs = player.noballs ?? 0;
+              const previousNoballs = player.noBalls ?? 0;
               const previousWides = player.wides ?? 0;
 
               // Increment wickets only if NOT a runout
@@ -960,7 +981,7 @@ useEffect(() => {
           // Prepare updated total wickets (increment by 1)
           const newTotalWickets = (inningData?.wickets ?? 0) + 1;
 
-          const updateBatsmanposition = updatedBattingOrder.map((player: any) => {
+          const updateBatsmanposition = updatedBattingOrder.map((player: Player) => {
             if (player.name === newBatsman) {
               return {
                 ...player,
@@ -992,13 +1013,13 @@ useEffect(() => {
 
 
           if (fetchDataFirst === 1) {
-            if (match_data.tossWinner === match_data.teamA.name && match_data.tossDecision === 'bat') {
+            if (match_data?.tossWinner === match_data?.teamA.name && match_data?.tossDecision === 'bat') {
               await updateDoc(matchDocRef, {
                 'teamA.score': newTotalRuns,
                 'teamA.wickets': increment(1),
                 'teamA.overs': oversFormatted,
               });
-            } else if (match_data.tossWinner === match_data.teamB.name && match_data.tossDecision === 'bat') {
+            } else if (match_data?.tossWinner === match_data?.teamB.name && match_data?.tossDecision === 'bat') {
               await updateDoc(matchDocRef, {
                 'teamB.score': newTotalRuns,
                 'teamB.wickets': increment(1),
@@ -1007,14 +1028,14 @@ useEffect(() => {
             }
           } else if (fetchDataFirst === 2) {
             // Opposite team update — assuming second innings is the other team batting
-            if (match_data.tossWinner === match_data.teamA.name && match_data.tossDecision === 'bat') {
+            if (match_data?.tossWinner === match_data?.teamA.name && match_data?.tossDecision === 'bat') {
               // Team B batting second innings
               await updateDoc(matchDocRef, {
                 'teamB.score': newTotalRuns,
                 'teamB.wickets': increment(1),
                 'teamB.overs': oversFormatted,
               });
-            } else if (match_data.tossWinner === match_data.teamB.name && match_data.tossDecision === 'bat') {
+            } else if (match_data?.tossWinner === match_data?.teamB.name && match_data?.tossDecision === 'bat') {
               // Team A batting second innings
               await updateDoc(matchDocRef, {
                 'teamA.score': newTotalRuns,
@@ -1023,12 +1044,6 @@ useEffect(() => {
               });
             }
           }
-
-          // Update local batting team state
-          // setBattingTeam((prev: any) => ({
-          //   ...prev,
-          //   battingOrder: updatedBattingOrder,
-          // }));
 
           // Reset ball-level stats for next ball
           setBalls(0);
@@ -1047,7 +1062,7 @@ useEffect(() => {
         } else {
           // Normal run/ball update logic
           const currentBattingOrder = inningData?.battingTeam?.battingOrder ?? [];
-          const updatedBattingOrder = currentBattingOrder.map((player: any) => {
+          const updatedBattingOrder = currentBattingOrder.map((player: Player) => {
             if (player.isStriker) {
               return {
                 ...player,
@@ -1060,10 +1075,10 @@ useEffect(() => {
             return player;
           });
 
-       
+
 
           const currentBowlingOrder = inningData?.bowlingTeam?.bowlingOrder ?? [];
-          const updatedBowlingOrder = currentBowlingOrder.map((player: any) => {
+          const updatedBowlingOrder = currentBowlingOrder.map((player: Player) => {
             if (player.name === currentBowler) {
               return {
                 ...player,
@@ -1072,9 +1087,9 @@ useEffect(() => {
                 wickets: (player.wickets ?? 0) + wickets,
                 overs: calculateOvers((player.balls ?? 0) + balls),
                 isCurrentBowler: true,
-                noballs: (player.noballs ?? 0) + noBalls,
+                noballs: (player.noBalls ?? 0) + noBalls,
                 wides: (player.wides ?? 0) + wides,
-                maiden: (player.maiden ?? 0) 
+                maiden: (player.maiden ?? 0)
               };
             }
             return {
@@ -1088,7 +1103,7 @@ useEffect(() => {
 
           if (currentBallInOver === 5 && wickets === 0) {
             if (runs % 2 === 0 || byes % 2 === 0 || legByes % 2 === 0) {
-              battingOrderToSave = updatedBattingOrder.map((player: any) => {
+              battingOrderToSave = updatedBattingOrder.map((player: Player) => {
                 if (player.isStriker) return { ...player, isStriker: false, isNonStriker: true };
                 if (player.isNonStriker) return { ...player, isStriker: true, isNonStriker: false };
                 return player;
@@ -1096,7 +1111,7 @@ useEffect(() => {
             }
           } else {
             if (runs !== 0 && runs % 2 !== 0 || byes !== 0 && byes % 2 !== 0 || legByes !== 0 && legByes % 2 !== 0) {
-              battingOrderToSave = updatedBattingOrder.map((player: any) => {
+              battingOrderToSave = updatedBattingOrder.map((player: Player) => {
                 if (player.isStriker) return { ...player, isStriker: false, isNonStriker: true };
                 if (player.isNonStriker) return { ...player, isStriker: true, isNonStriker: false };
                 return player;
@@ -1135,12 +1150,12 @@ useEffect(() => {
           })
 
           if (fetchDataFirst === 1) {
-            if (match_data.tossWinner === match_data.teamA.name && match_data.tossDecision === 'bat') {
+            if (match_data?.tossWinner === match_data?.teamA.name && match_data?.tossDecision === 'bat') {
               await updateDoc(matchDocRef, {
                 'teamA.score': newTotalRuns,
                 'teamA.overs': oversFormatted,
               });
-            } else if (match_data.tossWinner === match_data.teamB.name && match_data.tossDecision === 'bat') {
+            } else if (match_data?.tossWinner === match_data?.teamB.name && match_data?.tossDecision === 'bat') {
               await updateDoc(matchDocRef, {
                 'teamB.score': newTotalRuns,
                 'teamB.overs': oversFormatted,
@@ -1148,13 +1163,13 @@ useEffect(() => {
             }
           } else if (fetchDataFirst === 2) {
             // Opposite team update — assuming second innings is the other team batting
-            if (match_data.tossWinner === match_data.teamA.name && match_data.tossDecision === 'bat') {
+            if (match_data?.tossWinner === match_data?.teamA.name && match_data?.tossDecision === 'bat') {
               // Team B batting second innings
               await updateDoc(matchDocRef, {
                 'teamB.score': newTotalRuns,
                 'teamB.overs': oversFormatted,
               });
-            } else if (match_data.tossWinner === match_data.teamB.name && match_data.tossDecision === 'bat') {
+            } else if (match_data?.tossWinner === match_data?.teamB.name && match_data?.tossDecision === 'bat') {
               // Team A batting second innings
               await updateDoc(matchDocRef, {
                 'teamA.score': newTotalRuns,
@@ -1164,11 +1179,6 @@ useEffect(() => {
           }
 
 
-          // Update local batting team state
-          setBattingTeam((prev: any) => ({
-            ...prev,
-            battingOrder: battingOrderToSave,
-          }));
 
           // Reset ball-level stats
           setBalls(0);
@@ -1212,8 +1222,8 @@ useEffect(() => {
         // Get current batting order
         const battingOrder = inningData?.battingTeam?.battingOrder || [];
         // Identify striker/non-striker
-        const striker = battingOrder.find((p: any) => p.isStriker);
-        const nonStriker = battingOrder.find((p: any) => p.isNonStriker);
+        const striker = battingOrder.find((p: Player) => p.isStriker);
+        const nonStriker = battingOrder.find((p: Player) => p.isNonStriker);
         if (!striker || !nonStriker) return;
 
         // ALWAYS treat as arrays
@@ -1304,48 +1314,49 @@ useEffect(() => {
 
 useEffect(() => {
   const updateInningInFirestore = async () => {
-    if (inningData && undo) {
-      try {
-        const inningDocRef = doc(db, 'matches', match_id, 'innings', `inning${fetchDataFirst}`);
-        const matchDocRef = doc(db, 'matches', match_id);
+    if (!undo || !match_id || !fetchDataFirst) return;
 
-        // Flatten nested fields for updateDoc
-        const flatUndo: Record<string, any> = {
-          'battingTeam.name': undo.battingTeam.name,
-          'battingTeam.wickets': undo.battingTeam.wickets,
-          'battingTeam.score': undo.battingTeam.score,
-          'battingTeam.overs': undo.battingTeam.overs,
-          'battingTeam.battingOrder': undo.battingTeam.battingOrder,
+    try {
+      const inningDocRef = doc(db, 'matches', match_id, 'innings', `inning${fetchDataFirst}`);
+      const matchDocRef = doc(db, 'matches', match_id);
 
-          'bowlingTeam.name': undo.bowlingTeam.name,
-          'bowlingTeam.wickets': undo.bowlingTeam.wickets,
-          'bowlingTeam.score': undo.bowlingTeam.score,
-          'bowlingTeam.overs': undo.bowlingTeam.overs,
-          'bowlingTeam.bowlingOrder': undo.bowlingTeam.bowlingOrder,
+      const flatUndo = {
+        'battingTeam.name': undo.battingTeam.name,
+        'battingTeam.wickets': undo.battingTeam.wickets,
+        'battingTeam.score': undo.battingTeam.score,
+        'battingTeam.overs': undo.battingTeam.overs,
+        'battingTeam.battingOrder': undo.battingTeam.battingOrder,
+        'bowlingTeam.name': undo.bowlingTeam.name,
+        'bowlingTeam.wickets': undo.bowlingTeam.wickets,
+        'bowlingTeam.score': undo.bowlingTeam.score,
+        'bowlingTeam.overs': undo.bowlingTeam.overs,
+        'bowlingTeam.bowlingOrder': undo.bowlingTeam.bowlingOrder,
+        totalRuns: undo.totalRuns,
+        wickets: undo.wickets,
+        overs: undo.overs,
+        extras: undo.extras,
+        balls: undo.balls,
+        wides: undo.wides,
+        noBalls: undo.noBalls,
+        byes: undo.byes,
+        legByes: undo.legByes,
+        updatedAt: undo.updatedAt,
+        matchId: undo.matchId,
+        inningNumber: undo.inningNumber,
+        target: undo.target,
+        iswinner: undo.iswinner,
+      };
 
-          totalRuns: undo.totalRuns,
-          wickets: undo.wickets,
-          overs: undo.overs,
-          extras: undo.extras,
-          balls: undo.balls,
-          wides: undo.wides,
-          noBalls: undo.noBalls,
-          byes: undo.byes,
-          legByes: undo.legByes,
-          updatedAt: undo.updatedAt,
-          matchId: undo.matchId,
-          inningNumber: undo.inningNumber,
-          target: undo.target,
-          iswinner: undo.iswinner,
-        };
-
-        await updateDoc(inningDocRef, flatUndo);
-        await updateDoc(matchDocRef, {
-          totalRuns: undo.totalRuns,
-          wickets: undo.wickets,
-          overs: undo.overs,
-        });
-      } catch (error) {
+      await updateDoc(inningDocRef, flatUndo);
+      await updateDoc(matchDocRef, {
+        totalRuns: undo.totalRuns,
+        wickets: undo.wickets,
+        overs: undo.overs,
+      });
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Failed to update inningData in undo:', error.message);
+      } else {
         console.error('Failed to update inningData in undo:', error);
       }
     }
@@ -1417,9 +1428,9 @@ useEffect(() => {
       });
     };
 
-    if (battingTeamName === match_data.teamA.name) {
+    if (battingTeamName === match_data?.teamA.name) {
       updateMatchData('teamA');
-    } else if (battingTeamName === match_data.teamB.name) {
+    } else if (battingTeamName === match_data?.teamB.name) {
       updateMatchData('teamB');
     }
   }, [match_id, inningData]);

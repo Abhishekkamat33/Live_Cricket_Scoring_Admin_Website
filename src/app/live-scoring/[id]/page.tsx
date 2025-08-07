@@ -12,17 +12,32 @@ import CricketPlayersDisplay from '@/app/components/scoringcomponents/squard';
 import CommentaryPage from '../../components/scoringcomponents/BallTracker';
 
 
+
+interface Player {
+  id: string;
+  name: string;
+  role: string;
+  battingStyle?: string;
+  bowlingStyle?: string;
+  isOut?: boolean;
+  isStriker?: boolean;
+  isNonStriker?: boolean;
+  isCaptain?: boolean;
+  teamName?: string;
+  imageUrl?: string;
+  isCurrentBowler?: boolean;
+}
 type MatchDataType = {
   teamA: {
     name: string;
-    players: string[];
+    players: Player[];        // Change from string[] to Player[]
     score: number;
     wickets: number;
     overs: string;
   };
   teamB: {
     name: string;
-    players: string[];
+    players: Player[];        // Change from string[] to Player[]
     score: number;
     wickets: number;
     overs: string;
@@ -36,9 +51,8 @@ type MatchDataType = {
   matchWinner: string;
   tossWinner: string;
   tossDecision: string;
-
-
 };
+
 
 const Index = () => {
   const [matchData, setMatchData] = useState<MatchDataType | null>(null);
@@ -85,7 +99,7 @@ const Index = () => {
           setError('Match not found');
           //console.log('No such match!');
         }
-      } catch (error) {
+      } catch {
         setError('Error loading match data');
         //console.error('Error fetching match:', error);
       } finally {
