@@ -1,9 +1,8 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode, use } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { db } from '@/firebaseConfig';
 import { collection, doc, getDoc, increment, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
-
 
 type BallEntry = {
   name: string;
@@ -15,39 +14,68 @@ type BallEntry = {
   isWicket: boolean;
   wicketType?: 'bowled' | 'caught' | 'lbw' | 'runout' | 'stumped';
 };
-interface CommentaryEntry {
-  text: string;
+
+
+
+interface Player {
+  id: string;
+  name: string;
+  role: string;
+  battingStyle?: string;
+  bowlingStyle?: string;
+  isOut?: boolean;
+  isStriker?: boolean;
+  isNonStriker?: boolean;
+  isCaptain?: boolean;
+  teamName?: string;
+  imageUrl?: string;
+  isCurrentBowler?: boolean;
   runs?: number;
+  balls?: number;
+  fours?: number;
+  sixes?: number;
+  strikeRate?: number;
+  battingAverage?: number;
+  howOut?: {
+    by: string;
+    howOut: string;
+    bowler: string;
+  };
+  overs?: string;
   wickets?: number;
-  wicketType?: string | null;
-  strikerName?: string;
-  currentBowler?: string;
-  fielder?: string;
+  economy?: number;
+  maiden?: number;
+  playerWickets?: string[];
+  bowlingAverage?: number;
+}
+
+interface TeamDetails {
+  name: string;
+  wickets: number;
+  score: number;
+  overs: string;
+  battingOrder?: Player[];
+  bowlingOrder?: Player[];
+  players?: Player[];
+  recentBowlerName?: string;
+  recentBowler?: Player;
+  extras?: number;
+  totalRuns?: number;
+  balls?: number;
   wides?: number;
   noBalls?: number;
   byes?: number;
   legByes?: number;
-  balls?: number;
-  timestamp?: Date;
+  partnership?: any[];
+  fallofWicket?: any[];
+  updatedAt?: string;
+  matchId?: string;
 }
 
-
-type Inning = {
+interface Inning {
   id?: string;
-  battingTeam: {
-    name: string;
-    wickets: number;
-    score: number;
-    overs: string;
-    battingOrder: any[]; // You can define a more specific type for players if needed
-  };
-  bowlingTeam: {
-    name: string;
-    wickets: number;
-    score: number;
-    overs: string;
-    bowlingOrder: any[];
-  };
+  battingTeam: TeamDetails;
+  bowlingTeam: TeamDetails;
   totalRuns: number;
   extras: number;
   wickets: number;
@@ -62,7 +90,7 @@ type Inning = {
   inningNumber: number;
   target?: number;
   iswinner?: string;
-};
+}
 
 type ScoringContextType = {
   runs: number; setRuns: React.Dispatch<React.SetStateAction<number>>;
@@ -75,38 +103,36 @@ type ScoringContextType = {
   balls: number; setBalls: React.Dispatch<React.SetStateAction<number>>;
   overs: string; setOvers: React.Dispatch<React.SetStateAction<string>>;
   ballSummary: Record<number, BallEntry>;
+  setBallSummary: React.Dispatch<React.SetStateAction<Record<number, BallEntry>>>;
   strikerName: string; setStrikerName: React.Dispatch<React.SetStateAction<string>>;
   nonStrikerName: string; setNonStrikerName: React.Dispatch<React.SetStateAction<string>>;
   strike: boolean; setStrike: React.Dispatch<React.SetStateAction<boolean>>;
-  strikeSwapInProgress: boolean;
-  setBallSummary: React.Dispatch<React.SetStateAction<Record<number, BallEntry>>>;
   match_id: string; setMatch_id: React.Dispatch<React.SetStateAction<string>>;
   currentInning: number; setCurrentInning: React.Dispatch<React.SetStateAction<number>>;
   match_data: any; setMatch_data: React.Dispatch<React.SetStateAction<any>>;
   loading: boolean; setLoading: React.Dispatch<React.SetStateAction<boolean>>;
-  battingTeam: any; setBattingTeam: React.Dispatch<React.SetStateAction<any>>;
-  bowlingTeam: any; setBowlingTeam: React.Dispatch<React.SetStateAction<any>>;
+  battingTeam: TeamDetails | null; setBattingTeam: React.Dispatch<React.SetStateAction<TeamDetails | null>>;
+  bowlingTeam: TeamDetails | null; setBowlingTeam: React.Dispatch<React.SetStateAction<TeamDetails | null>>;
   totalRuns: number; setTotalRuns: React.Dispatch<React.SetStateAction<number>>;
   currentBowler: string; setCurrentBowler: React.Dispatch<React.SetStateAction<string>>;
-  inningData: any; setInningData: React.Dispatch<React.SetStateAction<any>>;
+  inningData: Inning[]; setInningData: React.Dispatch<React.SetStateAction<Inning[]>>;
   newBatsman: string; setNewBatsman: React.Dispatch<React.SetStateAction<string>>;
   outBatsman: string; setOutBatsman: React.Dispatch<React.SetStateAction<string>>;
   fielderName: string; setFielderName: React.Dispatch<React.SetStateAction<string>>;
-  fetchDataFirst: any; setFetchDataFirst: React.Dispatch<React.SetStateAction<any>>;
+  fetchDataFirst: number | null; setFetchDataFirst: React.Dispatch<React.SetStateAction<number | null>>;
   wicketType: string; setWicketType: React.Dispatch<React.SetStateAction<string>>;
   isSecondInning: boolean; setIsSecondInning: React.Dispatch<React.SetStateAction<boolean>>;
   target: number; setTarget: React.Dispatch<React.SetStateAction<number>>;
   iswinner: string; setIsWinner: React.Dispatch<React.SetStateAction<string>>;
-  undo: Inning | null;
-  setUndo: React.Dispatch<React.SetStateAction<Inning | null>>;
+  undo: Inning | null; setUndo: React.Dispatch<React.SetStateAction<Inning | null>>;
   recentBowler: boolean; setRecentBowler: React.Dispatch<React.SetStateAction<boolean>>;
-  recentBowlerName: any; setRecentBowlerName: React.Dispatch<React.SetStateAction<any>>;
+  // commentaryArray: CommentaryEntry[]; setCommentaryArray: React.Dispatch<React.SetStateAction<CommentaryEntry[]>>;
+  strikeSwapInProgress: boolean; setStrikeSwapInProgress: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 const ScoringContext = createContext<ScoringContextType | undefined>(undefined);
 
 export const ScoringProvider = ({ children }: { children: ReactNode }) => {
-  // State variables
   const [runs, setRuns] = useState(0);
   const [extras, setExtras] = useState(0);
   const [byes, setByes] = useState(0);
@@ -123,26 +149,24 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
   const [match_id, setMatch_id] = useState('');
   const [strike, setStrike] = useState(false);
   const [strikeSwapInProgress, setStrikeSwapInProgress] = useState(false);
-  const [match_data, setMatch_data] = useState<any | null>(null);
+  const [match_data, setMatch_data] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [battingTeam, setBattingTeam] = useState<any | null>(null);
-  const [bowlingTeam, setBowlingTeam] = useState<any | null>(null);
+  const [battingTeam, setBattingTeam] = useState<TeamDetails | null>(null);
+  const [bowlingTeam, setBowlingTeam] = useState<TeamDetails | null>(null);
   const [totalRuns, setTotalRuns] = useState(0);
-  const [currentBowler, setCurrentBowler] = useState<string>('');
-  const [inningData, setInningData] = useState<any[]>([]);
-  const [newBatsman, setNewBatsman] = useState<string>('');
-  const [outBatsman, setOutBatsman] = useState<string>('');
-  const [fielderName, setFielderName] = useState<string>('');
-  const [fetchDataFirst, setFetchDataFirst] = useState<any | null>(null);
+  const [currentBowler, setCurrentBowler] = useState('');
+  const [inningData, setInningData] = useState<Inning[]>([]);
+  const [newBatsman, setNewBatsman] = useState('');
+  const [outBatsman, setOutBatsman] = useState('');
+  const [fielderName, setFielderName] = useState('');
+  const [fetchDataFirst, setFetchDataFirst] = useState<number | null>(null);
   const [wicketType, setWicketType] = useState('');
   const [isSecondInning, setIsSecondInning] = useState(false);
   const [target, setTarget] = useState(0);
   const [iswinner, setIsWinner] = useState('');
   const [undo, setUndo] = useState<Inning | null>(null);
-  const [recentBowler, setRecentBowler] = useState<boolean>(false);
-  const [recentBowlerName, setRecentBowlerName] = useState<any>('');
-  const [commentaryArray, setCommentaryArray] = useState<CommentaryEntry[]>([]);
-
+  const [recentBowler, setRecentBowler] = useState(false);
+  // const [commentaryArray, setCommentaryArray] = useState<CommentaryEntry[]>([]);
 
 
 
@@ -208,11 +232,6 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
           const bowlingOrder = data.bowlingTeam?.bowlingOrder ?? [];
           setCurrentBowler(bowlingOrder.find((p: any) => p.isCurrentBowler)?.name ?? '');
 
-          setBattingTeam(data.battingTeam ?? null);
-          setBowlingTeam(data.bowlingTeam ?? null);
-
-
-
           // Reset wicket-related states
           setNewBatsman('');
           setOutBatsman('');
@@ -250,24 +269,28 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
 
 
   // Listen to inning collection realtime updates (optional, for UI sync)
-  useEffect(() => {
-    if (!match_id) return;
+useEffect(() => {
+  if (!match_id) return;
 
-    const inningsRef = collection(db, 'matches', match_id, 'innings');
+  const inningsRef = collection(db, 'matches', match_id, 'innings');
 
-    const unsubscribe = onSnapshot(
-      inningsRef,
-      (snapshot) => {
-        const inningsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setInningData(inningsData);
-      },
-      (error) => {
-        //console.error('Error fetching realtime innings:', error);
-      }
-    );
+  const unsubscribe = onSnapshot(
+    inningsRef,
+    (snapshot) => {
+      const inningsData = snapshot.docs.map(doc => {
+        const data = doc.data() as Omit<Inning, 'id'>;  // Firestore data without id
+        return { id: doc.id, ...data } as Inning;
+      });
+      setInningData(inningsData);
+    },
+    (error) => {
+      //console.error('Error fetching realtime innings:', error);
+    }
+  );
 
-    return () => unsubscribe();
-  }, [match_id]);
+  return () => unsubscribe();
+}, [match_id]);
+
 
   const fixedOver = match_data?.overPlayed;
 
@@ -311,11 +334,11 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
         }
       }
       // 3. Innings ended early due to all wickets lost
-      else if (firstInning.wicket === 10 && firstInning.totalRuns > secondInning.totalRuns) {
+      else if (firstInning.wickets === 10 && firstInning.totalRuns > secondInning.totalRuns) {
         setIsWinner(firstInning.battingTeam.name);
-      } else if (secondInning.wicket === 10 && secondInning.totalRuns > firstInning.totalRuns) {
+      } else if (secondInning.wickets === 10 && secondInning.totalRuns > firstInning.totalRuns) {
         setIsWinner(secondInning.battingTeam.name);
-      } else if (firstInning.wicket === 10 && firstInning.totalRuns === secondInning.totalRuns) {
+      } else if (firstInning.wickets === 10 && firstInning.totalRuns === secondInning.totalRuns) {
         setIsWinner('Draw');
       }
     } else {
@@ -493,15 +516,6 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
                 balls: balls
               }
             ],
-            fallofWickets: [
-              {
-                score: totalRuns,
-                wickets: wickets,
-                outBatsman: "",
-                bowler: currentBowler,
-                overs: overs,
-              }
-            ],
           },
           bowlingTeam: {
             name: battingTeam.name,
@@ -633,6 +647,7 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
         const inningData = inningSnap.data();
         const bowlingOrder = inningData?.bowlingTeam?.bowlingOrder || [];
 
+       
 
         const updatedBowlingOrder = bowlingOrder.map((player: any) => ({
           ...player,
@@ -642,7 +657,7 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
 
         await updateDoc(inningDocRef, {
           'bowlingTeam.bowlingOrder': updatedBowlingOrder,
-          'bowlingTeam.recentBowler': recentBowler
+          
         });
 
 
@@ -677,6 +692,10 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
         const inningData = inningSnap.data();
         const bowlingOrder = inningData?.bowlingTeam?.bowlingOrder || [];
 
+        const previousBowler = bowlingOrder.find((player: any) => player.isCurrentBowler);
+        console.log(previousBowler.name);
+     
+
         // If recentBowler is boolean true, then set isCurrentBowler = false for the current abowler
         if (recentBowler === true) {
           const updatedBowlingOrder = bowlingOrder.map((player: any) => ({
@@ -685,7 +704,8 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
           }));
 
           await updateDoc(inningDocRef, {
-            'bowlingTeam.bowlingOrder': updatedBowlingOrder,
+            'bowlingTeam.bowlingOrder': updatedBowlingOrder,  
+            'bowlingTeam.recentBowler': previousBowler?.name,
           });
           setBowlingTeam((prev: any) => ({
             ...prev,
@@ -752,11 +772,14 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
         const newTotalwides = inningData?.wides + wides;
         const six = runs === 6 ? 1 : 0;
         const four = runs === 4 ? 1 : 0;
+         const previousBowler = inningData?.bowlingTeam?.bowlingOrder.find((player: any) => player.isCurrentBowler)?.name || '';
+         if(previousBowler !== ''){
+         const recentBowlername = previousBowler
+         }
 
         const oversFormatted = calculateOvers(newTotalBalls);
         const currentBallInOver = (previousBalls + balls - 1) % 6;
 
-        const Allcommentary: CommentaryEntry[] = inningData?.commentary || [];
 
 
 
@@ -952,7 +975,6 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
             'battingTeam.battingOrder': updateBatsmanposition,
             'battingTeam.score': newTotalRuns,
             'battingTeam.wickets': newTotalWickets,
-            commentary: commentaryArray,
             wickets: newTotalWickets,
             balls: newTotalBalls,
             totalRuns: newTotalRuns,
@@ -962,7 +984,6 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
             noBalls: newTotalNoballs,
             'battingTeam.overs': oversFormatted,
             'bowlingTeam.score': newTotalRuns,
-            'bowlingTeam.recentBowler': recentBowlerName,
             'bowlingTeam.bowlingOrder': updatedBowlingOrder,
             'bowlingTeam.wickets': newTotalWickets,
             updatedAt: new Date().toISOString(),
@@ -1004,10 +1025,10 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
           }
 
           // Update local batting team state
-          setBattingTeam((prev: any) => ({
-            ...prev,
-            battingOrder: updatedBattingOrder,
-          }));
+          // setBattingTeam((prev: any) => ({
+          //   ...prev,
+          //   battingOrder: updatedBattingOrder,
+          // }));
 
           // Reset ball-level stats for next ball
           setBalls(0);
@@ -1039,7 +1060,7 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
             return player;
           });
 
-          console.log('balls', balls);
+       
 
           const currentBowlingOrder = inningData?.bowlingTeam?.bowlingOrder ?? [];
           const updatedBowlingOrder = currentBowlingOrder.map((player: any) => {
@@ -1096,7 +1117,6 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
             'battingTeam.overs': oversFormatted,
             'bowlingTeam.score': newTotalRuns,
             'bowlingTeam.overs': oversFormatted,
-            'bowlingTeam.recentBowler': recentBowlerName,
             'bowlingTeam.bowlingOrder': updatedBowlingOrder,
             totalRuns: newTotalRuns,
             overs: oversFormatted,
@@ -1282,27 +1302,58 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
 
 
 
-  //udate inning data in firestore for undo 
-  useEffect(() => {
-    const updateInningInFirestore = async () => {
-      if (inningData && undo) {
-        try {
-          const inningDocRef = doc(db, 'matches', match_id, 'innings', `inning${fetchDataFirst}`);
-          const matchDocRef = doc(db, 'matches', match_id);
-          await updateDoc(inningDocRef, undo);
-          await updateDoc(matchDocRef, {
-            totalRuns: undo.totalRuns,
-            wickets: undo.wickets,
-            overs: undo.overs
-          });
-        } catch (error) {
-          //console.error('Failed to update inningData in undo:', error);
-        }
-      }
-    };
+useEffect(() => {
+  const updateInningInFirestore = async () => {
+    if (inningData && undo) {
+      try {
+        const inningDocRef = doc(db, 'matches', match_id, 'innings', `inning${fetchDataFirst}`);
+        const matchDocRef = doc(db, 'matches', match_id);
 
-    updateInningInFirestore();
-  }, [undo]);
+        // Flatten nested fields for updateDoc
+        const flatUndo: Record<string, any> = {
+          'battingTeam.name': undo.battingTeam.name,
+          'battingTeam.wickets': undo.battingTeam.wickets,
+          'battingTeam.score': undo.battingTeam.score,
+          'battingTeam.overs': undo.battingTeam.overs,
+          'battingTeam.battingOrder': undo.battingTeam.battingOrder,
+
+          'bowlingTeam.name': undo.bowlingTeam.name,
+          'bowlingTeam.wickets': undo.bowlingTeam.wickets,
+          'bowlingTeam.score': undo.bowlingTeam.score,
+          'bowlingTeam.overs': undo.bowlingTeam.overs,
+          'bowlingTeam.bowlingOrder': undo.bowlingTeam.bowlingOrder,
+
+          totalRuns: undo.totalRuns,
+          wickets: undo.wickets,
+          overs: undo.overs,
+          extras: undo.extras,
+          balls: undo.balls,
+          wides: undo.wides,
+          noBalls: undo.noBalls,
+          byes: undo.byes,
+          legByes: undo.legByes,
+          updatedAt: undo.updatedAt,
+          matchId: undo.matchId,
+          inningNumber: undo.inningNumber,
+          target: undo.target,
+          iswinner: undo.iswinner,
+        };
+
+        await updateDoc(inningDocRef, flatUndo);
+        await updateDoc(matchDocRef, {
+          totalRuns: undo.totalRuns,
+          wickets: undo.wickets,
+          overs: undo.overs,
+        });
+      } catch (error) {
+        console.error('Failed to update inningData in undo:', error);
+      }
+    }
+  };
+
+  updateInningInFirestore();
+}, [undo]);
+
 
 
   const [matchLiveSet, setMatchLiveSet] = useState(false);
@@ -1409,7 +1460,7 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
       iswinner, setIsWinner,
       setUndo, undo,
       recentBowler, setRecentBowler,
-      recentBowlerName, setRecentBowlerName
+      setStrikeSwapInProgress
     }}>
       {children}
     </ScoringContext.Provider>

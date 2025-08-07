@@ -1,6 +1,6 @@
 // WinnerAnimation.tsx
 'use client';
-import React, { useEffect } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Confetti from 'react-confetti';
 
@@ -32,7 +32,7 @@ const WinnerAnimation = ({ winner, onClose }: { winner: string; onClose: () => v
             }}
           >
             {winner === 'Draw' ? (
-              <div>It's a Draw!</div>
+              <div>It&apos;s a Draw!</div>
             ) : (
               <div>🏆 {winner} Wins! 🏆</div>
             )}

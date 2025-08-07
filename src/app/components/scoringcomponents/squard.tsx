@@ -1,13 +1,36 @@
+'use client';
+
+import React from 'react';
 import { useScoring } from "../ScoringContext";
 
+interface Player {
+  id: string;
+  name: string;
+  role: string;
+  battingStyle?: string;
+  bowlingStyle?: string;
+  teamName?: string;
+}
 
+interface Staff {
+  id: string;
+  name: string;
+  role: string;
+}
+
+interface Team {
+  name: string;
+  score?: number;
+  wickets?: number;
+  overs?: string;
+  players: Player[];
+  benchPlayers?: Player[];
+  supportingStaff?: Staff[];
+}
 
 const Index = () => {
-
-  const {match_data} = useScoring();
- const { teamA, teamB } = match_data || {};
-
-
+  const { match_data } = useScoring();
+  const { teamA, teamB } = match_data || ({} as { teamA: Team; teamB: Team });
 
   const getTeamGradient = (teamName: string) =>
     teamName === 'IND' ? 'bg-gradient-to-br from-blue-700 to-orange-600' : 'bg-gradient-to-br from-green-600 to-yellow-400';
@@ -22,8 +45,7 @@ const Index = () => {
       .join('')
       .toUpperCase();
 
-  // Player card as JSX without custom components
-  const PlayerCard = ({ player, teamName }: { player: any; teamName: string }) => (
+  const PlayerCard = ({ player, teamName }: { player: Player; teamName: string }) => (
     <div className="border-l-4 border-transparent hover:border-indigo-500 hover:shadow-lg transition transform hover:-translate-y-1 rounded-md p-3 bg-white">
       <div className="flex items-center space-x-3">
         <div
@@ -42,8 +64,7 @@ const Index = () => {
     </div>
   );
 
-  // Staff card
-  const StaffCard = ({ staff }: { staff: any }) => (
+  const StaffCard = ({ staff }: { staff: Staff }) => (
     <div className="rounded-md p-3 bg-white hover:shadow-md transition">
       <div className="flex items-center space-x-3">
         <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-green-600 to-indigo-500 text-white font-semibold text-xs sm:text-sm">
@@ -57,8 +78,7 @@ const Index = () => {
     </div>
   );
 
-  // Team section
-  const TeamSection = ({ team }: { team: any }) => (
+  const TeamSection = ({ team }: { team: Team }) => (
     <div className="space-y-6">
       {/* Team Header */}
       <div className={`border-l-8 ${getTeamColor(team.name)} bg-white rounded-md shadow-md overflow-hidden`}>
@@ -72,7 +92,7 @@ const Index = () => {
               {team.name}
             </div>
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{team.name }</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{team.name}</h2>
               <p className="text-xs sm:text-sm text-gray-600">Team Squad</p>
             </div>
           </div>
@@ -94,7 +114,7 @@ const Index = () => {
           <h3 className="text-lg sm:text-xl font-semibold text-gray-900">Playing XI</h3>
         </div>
         <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-          {team.players.map((player: any) => (
+          {team.players.map((player) => (
             <PlayerCard key={player.id} player={player} teamName={team.name} />
           ))}
         </div>
@@ -108,7 +128,7 @@ const Index = () => {
             <h3 className="text-base sm:text-lg font-semibold text-gray-900">Bench Players</h3>
           </div>
           <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-            {team.benchPlayers.map((player: any) => (
+            {team.benchPlayers.map((player) => (
               <PlayerCard key={player.id} player={player} teamName={team.name} />
             ))}
           </div>
@@ -123,7 +143,7 @@ const Index = () => {
             <h3 className="text-base sm:text-lg font-semibold text-gray-900">Supporting Staff</h3>
           </div>
           <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-            {team.supportingStaff.map((staff: any) => (
+            {team.supportingStaff.map((staff) => (
               <StaffCard key={staff.id} staff={staff} />
             ))}
           </div>
@@ -147,12 +167,10 @@ const Index = () => {
           <TeamSection team={teamA} />
           <TeamSection team={teamB} />
         </main>
-  
+
         {/* Footer */}
         <footer className="text-center mt-8">
-          <p className="text-sm text-gray-600">
-            &copy; {new Date().getFullYear()} Cricket Squad. All rights reserved.
-          </p>
+          <p className="text-sm text-gray-600">&copy; {new Date().getFullYear()} Cricket Squad. All rights reserved.</p>
         </footer>
       </div>
     </div>

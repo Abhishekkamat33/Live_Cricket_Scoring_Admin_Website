@@ -58,7 +58,7 @@ const AboutUs = () => {
             </p>
             
             <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-              Today, we're proud to serve cricket communities across the globe, providing tools 
+              Today, we are proud to serve cricket communities across the globe, providing tools 
               that make scoring simple, analytics powerful, and the cricket experience more enjoyable for everyone.
             </p>
             

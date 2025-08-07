@@ -57,7 +57,6 @@ interface CricketMatchManagerProps {
 const CricketMatchManager: React.FC<CricketMatchManagerProps> = ({ initialMatches = [] }) => {
   const [matches, setMatches] = useState<Match[]>(initialMatches.map(transformMatch));
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
-  const [showAddForm, setShowAddForm] = useState<boolean>(false);
   const [matchCreatedBy, setMatchCreatedBy] = useState<string | null>(null);
 
   const router = useRouter();

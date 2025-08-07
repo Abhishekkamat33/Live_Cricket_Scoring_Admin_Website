@@ -1,5 +1,4 @@
 'use client';
-'use client'
 
 import React, { useState } from 'react'
 import { Mail, Phone, MapPin, Send, CheckCircle, AlertCircle } from 'lucide-react'
@@ -25,7 +24,7 @@ export default function ContactPage() {
     subject: '',
     message: ''
   })
-  
+
   const [errors, setErrors] = useState<FormErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
@@ -62,36 +61,40 @@ export default function ContactPage() {
   ) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
-    
+
     // Clear error when user starts typing
     if (errors[name as keyof FormErrors]) {
       setErrors(prev => ({ ...prev, [name]: undefined }))
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!validateForm()) {
-      return
-    }
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    setIsSubmitting(true)
-    setSubmitStatus('idle')
-
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Reset form on success
-      setFormData({ name: '', email: '', subject: '', message: '' })
-      setSubmitStatus('success')
-    } catch (error) {
-      setSubmitStatus('error')
-    } finally {
-      setIsSubmitting(false)
-    }
+  if (!validateForm()) {
+    return;
   }
+
+  setIsSubmitting(true);
+  setSubmitStatus('idle');
+
+  try {
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Reset form on success
+    setFormData({ name: '', email: '', subject: '', message: '' });
+    setSubmitStatus('success');
+  } catch (error) {
+    console.error(error);
+    setSubmitStatus('error');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50">
@@ -102,8 +105,9 @@ export default function ContactPage() {
             Get In Touch
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            We'd love to hear from you. Send us a message and we'll respond as soon as possible.
+            We&apos;d love to hear from you. Send us a message and we&apos;ll respond as soon as possible.
           </p>
+
         </div>
 
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12">
@@ -184,9 +188,8 @@ export default function ContactPage() {
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
-                      errors.name ? 'border-red-300' : 'border-gray-300'
-                    }`}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${errors.name ? 'border-red-300' : 'border-gray-300'
+                      }`}
                     placeholder="Enter your full name"
                   />
                   {errors.name && (
@@ -207,9 +210,8 @@ export default function ContactPage() {
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
-                      errors.email ? 'border-red-300' : 'border-gray-300'
-                    }`}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${errors.email ? 'border-red-300' : 'border-gray-300'
+                      }`}
                     placeholder="Enter your email address"
                   />
                   {errors.email && (
@@ -231,9 +233,8 @@ export default function ContactPage() {
                   name="subject"
                   value={formData.subject}
                   onChange={handleInputChange}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
-                    errors.subject ? 'border-red-300' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${errors.subject ? 'border-red-300' : 'border-gray-300'
+                    }`}
                   placeholder="What's this about?"
                 />
                 {errors.subject && (
@@ -254,9 +255,8 @@ export default function ContactPage() {
                   rows={6}
                   value={formData.message}
                   onChange={handleInputChange}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors resize-vertical ${
-                    errors.message ? 'border-red-300' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors resize-vertical ${errors.message ? 'border-red-300' : 'border-gray-300'
+                    }`}
                   placeholder="Tell us more about your inquiry..."
                 />
                 {errors.message && (

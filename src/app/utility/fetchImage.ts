@@ -18,12 +18,9 @@ export const uploadImageToCloudinary = async (file: File): Promise<string> => {
         body: formData,
       })
 
-    if (!response.ok) {
-      // For better debugging, log the response text (Cloudinary often returns error details)
-      const errorText = await response.text();
-
-      throw new Error(`Cloudinary upload failed with status ${response.status}`);
-    }
+if (!response.ok) {
+  throw new Error(`Cloudinary upload failed with status ${response.status}`);
+}
 
     const data = await response.json();
    

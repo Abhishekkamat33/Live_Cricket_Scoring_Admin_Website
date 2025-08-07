@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { FaUser, FaCamera, FaEdit, FaTrash, FaSave, FaTimes } from 'react-icons/fa';
 import { uploadImageToCloudinary } from '../utility/fetchImage';
 import Image from 'next/image';
@@ -13,13 +13,17 @@ interface SupportingStaff {
 
 const roles = ['Coach', 'Physio', 'Manager', 'Support'];
 
-interface SupportStaffProps {
-  matchData: {
-    teamA: { name: string; supportingStaff?: SupportingStaff[] };
-    teamB: { name: string; supportingStaff?: SupportingStaff[] };
-  };
-  updateMatchData: (updatedData: any) => Promise<void>;
+interface MatchData {
+  teamA: { name: string; supportingStaff?: SupportingStaff[] };
+  teamB: { name: string; supportingStaff?: SupportingStaff[] };
 }
+
+interface SupportStaffProps {
+  matchData: MatchData;
+  updateMatchData: (updatedData: Partial<MatchData>) => Promise<void>;
+}
+
+
 
 export default function SupportStaff({ matchData, updateMatchData }: SupportStaffProps) {
   // Form states
@@ -121,7 +125,8 @@ export default function SupportStaff({ matchData, updateMatchData }: SupportStaf
 
     const teamIsA = staffEditTeamName === matchData.teamA.name;
     const currentStaff = teamIsA ? matchData.teamA.supportingStaff ?? [] : matchData.teamB.supportingStaff ?? [];
-       const ImageFile = staffImageFile ? await uploadImageToCloudinary(staffImageFile) : '';
+    const ImageFile = staffEditImageFile ? await uploadImageToCloudinary(staffEditImageFile) : '';
+
   
     const updatedStaff = currentStaff.map((s) =>
       s.id === staffEditingId

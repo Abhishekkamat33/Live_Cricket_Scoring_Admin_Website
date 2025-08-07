@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import admin from '../../../app/firebaseadmin';
 
-export async function GET(request: Request) {
+export async function GET() {
   const cookieStore = await cookies();
   const sessionToken = cookieStore.get('session')?.value;
 
@@ -17,7 +17,7 @@ export async function GET(request: Request) {
     
     return NextResponse.json({ message: 'Access granted', uid: decodedToken.uid });
   } catch (error) {
-
+  console.error('Error verifying token:', error);
     const response = NextResponse.json(
       { error: 'Unauthorized: Invalid or expired token' },
       { status: 401 }

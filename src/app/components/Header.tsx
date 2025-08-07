@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-const Header = ({ showlogin }: { showlogin: boolean }) => {
+const Header = () => {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -128,8 +128,7 @@ const Header = ({ showlogin }: { showlogin: boolean }) => {
               </Link>
             ))}
 
-            {showlogin ? (
-              <>
+          
                 <button
                   onClick={() => {
                     closeMobileMenu();
@@ -148,18 +147,6 @@ const Header = ({ showlogin }: { showlogin: boolean }) => {
                 >
                   Start Scoring
                 </button>
-              </>
-            ) : (
-              <button
-                onClick={() => {
-                  closeMobileMenu();
-                  router.push('/dashboard');
-                }}
-                className="w-full px-4 py-2 rounded-lg border border-primary text-primary font-semibold hover:bg-primary hover:text-white transition-colors duration-200"
-              >
-                Dashboard
-              </button>
-            )}
           </div>
         </nav>
       )}

@@ -1,6 +1,6 @@
 // app/api/matches/route.ts
 import { db } from '@/firebaseConfig';
-import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {

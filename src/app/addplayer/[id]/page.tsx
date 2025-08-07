@@ -10,7 +10,7 @@ import {
 import { useParams, useRouter } from 'next/navigation';
 import Benchplayer from '@/app/playerComponents/Benchplayer';
 import SupportStaff from '../../playerComponents/SupportStaff';
-import { FaUser, FaCrown, FaEdit, FaTrash, FaPlus, FaSave, FaTimes, FaCamera, FaPlusCircle} from 'react-icons/fa';
+import { FaUser, FaCrown, FaEdit, FaTrash, FaPlus, FaSave, FaTimes, FaCamera} from 'react-icons/fa';
 import { uploadImageToCloudinary } from '@/app/utility/fetchImage';
 import Image from 'next/image';
 
@@ -56,6 +56,8 @@ interface ManagePlayersProps {
   matchId?: string;
 }
 
+
+
 export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersProps) {
   const { id } = useParams();
   const router = useRouter();
@@ -71,14 +73,14 @@ export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersPro
           router.push('/login');
         } else {
           // If authorized, you can load or show data as needed
-          const data = await response.json();
+         await response.json();
        
         
         }
       }
   
       verifySession();
-    }, [matchId]);
+    }, [matchId, router]);
   
   const [loading, setLoading] = useState(false);
   const [matchData, setMatchData] = useState<MatchData | null>(null);

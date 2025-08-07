@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import uuid from 'react-native-uuid';
 import { uploadImageToCloudinary } from '../utility/fetchImage';
-import { getAuth } from 'firebase/auth';
+import Image from 'next/image';
 
 const defaultTeamALogo = '/default-teamA-logo.png'; // Put your default image in public folder
 const defaultTeamBLogo = '/default-teamB-logo.png';
@@ -35,25 +35,25 @@ const Index = () => {
   });
 
 
-    useEffect(() => {
-        async function verifySession() {
-          const response = await fetch('/api/protected');
-          if (response.status === 401) {
-            // If unauthorized => redirect to login page
-            router.push('/login');
-          } else {
-            // If authorized, you can load or show data as needed
-            const data = await response.json();
+  useEffect(() => {
+    async function verifySession() {
+      const response = await fetch('/api/protected');
+      if (response.status === 401) {
+        // If unauthorized => redirect to login page
+        router.push('/login');
+      } else {
+        // If authorized, you can load or show data as needed
+        const data = await response.json();
 
-            setMatchCreated(data.uid);
-          
-          }
-        }
-    
-        verifySession();
-      }, [router]);
+        setMatchCreated(data.uid);
 
-    
+      }
+    }
+
+    verifySession();
+  }, [router]);
+
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setMatchForm({ ...matchForm, [e.target.name]: e.target.value });
@@ -85,8 +85,8 @@ const Index = () => {
 
     try {
       // Here you can upload teamALogoFile and teamBLogoFile to storage and get URLs, for demo leaving empty
-      const teamALogoUrl = teamALogoFile ? teamALogoPreview : defaultTeamALogo;
-      const teamBLogoUrl = teamBLogoFile ? teamBLogoPreview : defaultTeamBLogo;
+      // const teamALogoUrl = teamALogoFile ? teamALogoPreview : defaultTeamALogo;
+      // const teamBLogoUrl = teamBLogoFile ? teamBLogoPreview : defaultTeamBLogo;
 
       const ImageFile = teamALogoFile ? await uploadImageToCloudinary(teamALogoFile) : '';
       const ImageFile2 = teamBLogoFile ? await uploadImageToCloudinary(teamBLogoFile) : '';
@@ -211,10 +211,12 @@ const Index = () => {
                       className="w-full p-2 text-sm bg-background/50 border-2 rounded-xl cursor-pointer focus:border-primary transition-all duration-300"
                     />
                     {teamALogoPreview && (
-                      <img
+                      <Image
                         src={teamALogoPreview}
                         alt="Team A Logo Preview"
-                        className="h-20 mt-2 object-contain"
+                        width={80}   // approximate width you want
+                        height={80}  // approximate height you want
+                        className="mt-2 object-contain"
                       />
                     )}
                   </div>
@@ -245,10 +247,12 @@ const Index = () => {
                       className="w-full p-2 text-sm bg-background/50 border-2 rounded-xl cursor-pointer focus:border-primary transition-all duration-300"
                     />
                     {teamBLogoPreview && (
-                      <img
+                      <Image
                         src={teamBLogoPreview}
                         alt="Team B Logo Preview"
-                        className="h-20 mt-2 object-contain"
+                        width={80}   // approximate width you want
+                        height={80}  // approximate height you want
+                        className="mt-2 object-contain"
                       />
                     )}
                   </div>

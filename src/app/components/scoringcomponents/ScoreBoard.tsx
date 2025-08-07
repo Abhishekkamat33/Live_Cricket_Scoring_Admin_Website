@@ -1,13 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { useScoring } from '../../components/ScoringContext';
 import WinnerAnimation from '../scoringcomponents/winninganimation';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import { FaUser } from 'react-icons/fa';
+
 
 interface PlayerStats {
   name: string;
@@ -63,7 +60,7 @@ const ScoreBoard: React.FC = () => {
   const [striker, setStriker] = useState<PlayerStats | null>(null);
   const [nonStriker, setNonStriker] = useState<PlayerStats | null>(null);
   const [currentBowler, setCurrentBowler] = useState<BowlingPlayer | null>(null);
-  const [result, setResult] = useState<string>('');
+  const [result, setResult] = useState<string | null>(null);
   const [target, setTarget] = useState<number>(0);
   const [activeBatsmen, setActiveBatsmen] = useState<PlayerStats[]>([]);
 
@@ -171,21 +168,24 @@ useEffect(() => {
     setIsWinner('');
   };
 
-  if (iswinner) {
-    return isSecondInning ? (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 flex items-center justify-center px-4">
-        <div className="bg-white/90 backdrop-blur-md rounded-3xl p-12 shadow-2xl text-center w-full max-w-md">
-          <div className="animate-pulse text-6xl mb-6">🏏</div>
-          <div className="text-2xl font-bold text-gray-700 mb-2">Second Inning in Progress...</div>
-          <div className="text-gray-500">The match continues!</div>
-        </div>
-      </div>
-    ) : (
-      <WinnerAnimation winner={iswinner} onClose={handleWinnerClose} />
-    );
-  }
+if (iswinner || result) {
+  return (
+    <WinnerAnimation winner={iswinner} onClose={handleWinnerClose} />
+  );
+}
 
- 
+if (isSecondInning) {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 flex items-center justify-center px-4">
+      <div className="bg-white/90 backdrop-blur-md rounded-3xl p-12 shadow-2xl text-center w-full max-w-md">
+        <div className="animate-pulse text-6xl mb-6">🏏</div>
+        <div className="text-2xl font-bold text-gray-700 mb-2">Second Inning in Progress...</div>
+        <div className="text-gray-500">The match continues!</div>
+      </div>
+    </div>
+  );
+}
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-8 px-4 sm:px-6 lg:px-8">

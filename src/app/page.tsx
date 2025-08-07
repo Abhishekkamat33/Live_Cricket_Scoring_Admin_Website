@@ -7,15 +7,14 @@ import { InstructionSection } from './components/InstructionSection';
 import { SaleSection } from './components/SaleSection';
 import AboutUs from './components/Aboutus';
 import Footer from './components/Footer';
-import { useRouter } from 'next/navigation';
+
 
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 
 function Page() {
-  const router = useRouter();
-  const [showlogin, setShowLogin] = useState(false);
+
 
     useEffect(() => {
        toast.info('Please log in to access additional features.', {
@@ -38,7 +37,7 @@ function Page() {
 
       <div className="min-h-screen text-gray-800 m-0 p-0 flex flex-col ">
         <header className="w-full">
-          <Header showlogin={showlogin}/>
+          <Header />
         </header>
 
         <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-16">

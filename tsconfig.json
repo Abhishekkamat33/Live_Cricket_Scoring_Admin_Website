@@ -34,7 +34,7 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "src/app/live-scoring/page.tsx",
-    "src/app/components/scoringcomponents/ScoringControls.jsx"
+    "src/app/components/scoringcomponents/ScoringControls.tsx"
 , "src/middleware.ts"  ],
   "exclude": [
     "node_modules"

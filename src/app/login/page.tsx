@@ -7,19 +7,27 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
-  onAuthStateChanged,
-  signOut,
   User,
 } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/firebaseConfig";
-import { request } from "http";
+
+
+
+type Player = { name: string };
+
+interface MatchData {
+  teamA: { name: string; benchPlayers?: Player[] };
+  teamB: { name: string; benchPlayers?: Player[] };
+}
+
+updateMatchData: (updatedData: MatchData) => Promise<void>;
+
 
 export default function LoginPage() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true); // Initial auth check loading state
   const [error, setError] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -112,9 +120,15 @@ export default function LoginPage() {
       await handleSession(user);
 
       router.push("/dashboard");
-    } catch (err: any) {
-      setError(err.message || "Email/password sign-in failed");
-    } finally {
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Email/password sign-in failed");
+      }
+    }
+
+    finally {
       setLoading(false);
     }
   };

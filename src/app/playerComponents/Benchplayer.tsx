@@ -23,13 +23,21 @@ const roles = [
   'Support',
 ];
 
-interface BenchplayerProps {
-  matchData: {
-    teamA: { name: string; benchPlayers?: Player[] };
-    teamB: { name: string; benchPlayers?: Player[] };
-  };
-  updateMatchData: (updatedData: any) => Promise<void>;
+interface MatchTeam {
+  name: string;
+  benchPlayers?: Player[];
 }
+
+interface MatchData {
+  teamA: MatchTeam;
+  teamB: MatchTeam;
+}
+
+interface BenchplayerProps {
+  matchData: MatchData;
+  updateMatchData: (updatedData: MatchData) => Promise<void>;
+}
+
 
 export default function Benchplayer({ matchData, updateMatchData }: BenchplayerProps) {
   // Add Bench Player States
@@ -73,7 +81,6 @@ export default function Benchplayer({ matchData, updateMatchData }: BenchplayerP
       return;
     }
     const benchPlayerImage = benchPlayerImageFile ? await uploadImageToCloudinary(benchPlayerImageFile) : '';
-    console.log('benchImageFile', benchPlayerImageFile);
 
     if (!matchData) return;
 
@@ -139,8 +146,7 @@ export default function Benchplayer({ matchData, updateMatchData }: BenchplayerP
     const teamIsA = benchEditTeamName === matchData.teamA.name;
     const currentPlayers = teamIsA ? matchData.teamA.benchPlayers ?? [] : matchData.teamB.benchPlayers ?? [];
 
-       const benchPlayerImage = benchPlayerImageFile ? await uploadImageToCloudinary(benchPlayerImageFile) : '';
-    console.log('benchImageFile', benchPlayerImageFile);
+      const benchPlayerImage = benchEditImageFile ? await uploadImageToCloudinary(benchEditImageFile) : '';
     const updatedPlayers = currentPlayers.map((p) =>
       p.id === benchPlayersEditingId
         ? {

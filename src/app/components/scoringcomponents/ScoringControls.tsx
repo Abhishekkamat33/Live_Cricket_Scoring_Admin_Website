@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useScoring } from '../../components/ScoringContext';
+import { Card,  CardHeader, CardTitle } from '@/components/ui/card';
+import { useScoring } from '../ScoringContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,9 +14,115 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+interface Player {
+  id: string;
+  name: string;
+  role: string;
+  battingStyle?: string;
+  bowlingStyle?: string;
+  isOut?: boolean;
+  isStriker?: boolean;
+  isNonStriker?: boolean;
+  isCaptain?: boolean;
+  teamName?: string;
+  imageUrl?: string;
+  isCurrentBowler?: boolean;
+}
+
+interface Staff {
+  id: string;
+  name: string;
+  role: string;
+}
+
+interface BattingTeam {
+  battingOrder: Player[];
+  players?: Player[];
+  recentBowlerName?: string;
+}
+
+interface BowlingTeam {
+  bowlingOrder: Player[];
+  recentBowler?: Player;
+  recentBowlerName?: string;
+}
+
+interface TeamDetails {
+  name: string;
+  score: number;
+  wickets: number;
+  overs: string;
+  players: Player[];
+  battingOrder?: Player[];    // For batting team
+  bowlingOrder?: Player[];    // For bowling team
+  benchPlayers?: Player[];
+  supportingStaff?: Staff[];
+  recentBowlerName?: string;
+  recentBowler?: Player;
+  extras?: number;
+  totalRuns?: number;
+  balls?: number;
+  wides?: number;
+  noBalls?: number;
+  byes?: number;
+  legByes?: number;
+  // Additional optional properties
+}
+
+type Inning = {
+  id?: string;
+  battingTeam: {
+    name: string;
+    wickets: number;
+    score: number;
+    overs: string;
+    battingOrder: Player[]; // You can define a more specific type for players if needed
+  };
+  bowlingTeam: {
+    name: string;
+    wickets: number;
+    score: number;
+    overs: string;
+    bowlingOrder: Player[];
+  };
+  totalRuns: number;
+  extras: number;
+  wickets: number;
+  balls: number;
+  wides: number;
+  noBalls: number;
+  byes: number;
+  legByes: number;
+  updatedAt: string;
+  matchId: string;
+  overs: string;
+  inningNumber: number;
+  target?: number;
+  iswinner?: string;
+};
+
+
+interface MatchTeam {
+  name: string;
+  score: number;
+  wickets: number;
+  overs: string;
+  players: Player[];
+  benchPlayers?: Player[];
+  supportingStaff?: Staff[];
+}
+
+interface MatchData {
+  teamA: MatchTeam;
+  teamB: MatchTeam;
+  tossWinner?: string;
+  tossDecision?: string;
+  matchType?: string;
+}
+
 interface ScoringControlsProps {
   matchId: string;
-  matchData: any;
+  matchData: MatchData | null;
 }
 
 const ScoringControls: React.FC<ScoringControlsProps> = ({ matchId, matchData }) => {
@@ -51,8 +157,6 @@ const ScoringControls: React.FC<ScoringControlsProps> = ({ matchId, matchData })
     setUndo,
     setRecentBowler,
     recentBowler,
-    recentBowlerName,
-    setRecentBowlerName,
   } = useScoring();
 
   // Wicket info
@@ -70,16 +174,16 @@ const ScoringControls: React.FC<ScoringControlsProps> = ({ matchId, matchData })
   const [needNewBowlerInput, setNeedNewBowlerInput] = useState(false);
   const [needNewBatsmanInput, setNeedNewBatsmanInput] = useState(false);
 
-  const [strikerBatsman, setStrikerBatsman] = useState<any | null>('');
-  const [nonStrikerBatsman, setNonStrikerBatsman] = useState<any | null>('');
-  const [strikerBowler, setStrikerBowler] = useState<any | null>('');
+  const [strikerBatsman, setStrikerBatsman] = useState<string>('');
+  const [nonStrikerBatsman, setNonStrikerBatsman] = useState<string>('');
+  const [strikerBowler, setStrikerBowler] = useState<string >('');
   const [lastOverPrompted, setLastOverPrompted] = useState<number | null>(null);
   const [showNoBallOptions, setShowNoBallOptions] = useState(false);
   const [noBallRunType, setNoBallRunType] = useState<'bat' | 'bye' | 'legbye' | ''>('');
   const [noBallRuns, setNoBallRuns] = useState<number>(0);
   const [showWideOptions, setShowWideOptions] = useState(false);
   const [wideRuns, setWideRuns] = useState<number>(0);
-  const [history, setHistory] = useState<any[]>([]);
+  const [history, setHistory] = useState<Inning[]>([]);
 
   useEffect(() => {
     if (inningData.length === 0) {
@@ -114,9 +218,9 @@ const ScoringControls: React.FC<ScoringControlsProps> = ({ matchId, matchData })
     const battingOrder = latestInning.battingTeam?.battingOrder || [];
     const bowlingOrder = latestInning.bowlingTeam?.bowlingOrder || [];
 
-    const striker = battingOrder.find((player: any) => player.isStriker);
-    const nonStriker = battingOrder.find((player: any) => player.isNonStriker);
-    const currentBowler = bowlingOrder.find((player: any) => player.isCurrentBowler);
+    const striker = battingOrder.find((player: Player) => player.isStriker);
+    const nonStriker = battingOrder.find((player:Player) => player.isNonStriker);
+    const currentBowler = bowlingOrder.find((player: Player) => player.isCurrentBowler);
 
     if (currentBowler === '' || currentBowler === null || currentBowler === undefined) {
       setNeedNewBowlerInput(true);
@@ -145,24 +249,24 @@ const ScoringControls: React.FC<ScoringControlsProps> = ({ matchId, matchData })
     }
   }, [matchData, inningData, fetchDataFirst, isSecondInning]);
 
- useEffect(() => {
+useEffect(() => {
   if (!matchData) return;
 
   setMatch_data(matchData);
   setMatch_id(matchId);
 
-  const teamA = matchData.teamA;
-  const teamB = matchData.teamB;
+  const { teamA, teamB, tossWinner, tossDecision } = matchData;
 
   let firstBatting, firstBowling;
 
-  if (matchData.tossDecision === 'bat') {
-    firstBatting = matchData.tossWinner === teamA.name ? teamA : teamB;
-    firstBowling = matchData.tossWinner === teamA.name ? teamB : teamA;
+  if (tossDecision === 'bat') {
+    firstBatting = tossWinner === teamA.name ? teamA : teamB;
+    firstBowling = tossWinner === teamA.name ? teamB : teamA;
   } else {
-    firstBatting = matchData.tossWinner === teamA.name ? teamB : teamA;
-    firstBowling = matchData.tossWinner === teamA.name ? teamA : teamB;
+    firstBatting = tossWinner === teamA.name ? teamB : teamA;
+    firstBowling = tossWinner === teamA.name ? teamA : teamB;
   }
+
 
   if (isSecondInning) {
     setBattingTeam(firstBowling);
@@ -173,8 +277,7 @@ const ScoringControls: React.FC<ScoringControlsProps> = ({ matchId, matchData })
   }
 
   setLoading(false);
-}, [matchData, isSecondInning]);
-
+}, [isSecondInning]);
 
 
 
@@ -204,7 +307,7 @@ const ScoringControls: React.FC<ScoringControlsProps> = ({ matchId, matchData })
       setLastOverPrompted(completedOvers);
       setCurrentBowler('');
       setNeedNewBowlerInput(true);
-      setRecentBowlerName(inningData[inningData.length - 1].bowlingTeam?.bowlingOrder.find((player: any) => player.isCurrentBowler));
+    
     }
     else if (ballsInCurrentOver > 0) {
       setNeedNewBowlerInput(false);
@@ -271,11 +374,10 @@ const ScoringControls: React.FC<ScoringControlsProps> = ({ matchId, matchData })
     const newBatsmanLower = newBatsman?.toLowerCase().trim();
     const fielderNameLower = fielderName?.toLowerCase().trim();
     const strikerBatsmanLower = strikerBatsman?.toLowerCase().trim();
-    const strikerNameLower = strikerName?.toLowerCase().trim();
-    const nonStrikerNameLower = nonStrikerName?.toLowerCase().trim();
+
 
     const newBatsmanPlayer = lastInning?.battingTeam.battingOrder.find(
-      (player: any) => player.name.toLowerCase() === newBatsmanLower
+      (player: Player) => player.name.toLowerCase() === newBatsmanLower
     );
 
     if (!newBatsmanPlayer) {
@@ -285,7 +387,7 @@ const ScoringControls: React.FC<ScoringControlsProps> = ({ matchId, matchData })
 
     const fielderPlayer = fielderName
       ? lastInning?.bowlingTeam.bowlingOrder.find(
-          (player: any) => player.name.toLowerCase() === fielderNameLower
+          (player: Player) => player.name.toLowerCase() === fielderNameLower
         )
       : null;
 
@@ -387,7 +489,7 @@ const ScoringControls: React.FC<ScoringControlsProps> = ({ matchId, matchData })
     }
 
     if (matchData) {
-      const battingNames = battingTeam?.players?.map((p: any) => p.name);
+      const battingNames = battingTeam?.players?.map((p: Player) => p.name);
 
    
 
@@ -405,7 +507,7 @@ const ScoringControls: React.FC<ScoringControlsProps> = ({ matchId, matchData })
         return;
       }
 
-      const bowlingNames = bowlingTeam?.players?.map((p: any) => p.name);
+      const bowlingNames = bowlingTeam?.players?.map((p: Player) => p.name);
 
       if (!bowlingNames?.includes(strikerBowler)) {
         alert('Bowler must be from the bowling team.');
@@ -451,7 +553,7 @@ const ScoringControls: React.FC<ScoringControlsProps> = ({ matchId, matchData })
 
     const bowlingOrder = latestInning.bowlingTeam?.bowlingOrder || [];
 
-    const currentBowlerObj = bowlingOrder.find((player: any) => player.isCurrentBowler);
+    const currentBowler = latestInning.bowlingTeam?.recentBowler;
     if (
       checkBowler?.trim().toLowerCase() === trimmedBowler.trim().toLowerCase()
     ) {
@@ -459,12 +561,12 @@ const ScoringControls: React.FC<ScoringControlsProps> = ({ matchId, matchData })
       return;
     }
 
-    if (currentBowlerObj && currentBowlerObj.name === trimmedBowler) {
+    if (currentBowler === trimmedBowler) {
       alert('This bowler is already bowling the current over. Please select another bowler.');
       return;
     }
 
-    const newBowlerExists = bowlingOrder.some((player: any) => player.name === trimmedBowler);
+    const newBowlerExists = bowlingOrder.some((player: Player) => player.name === trimmedBowler);
     if (!newBowlerExists) {
       alert('Bowler not found in bowling team. Please enter a valid bowler name.');
       return;
@@ -473,7 +575,6 @@ const ScoringControls: React.FC<ScoringControlsProps> = ({ matchId, matchData })
     setCurrentBowler(strikerBowler.trim());
 
     setNeedNewBowlerInput(false);
-    setRecentBowlerName('');
     setRecentBowler(false);
   };
 

@@ -17,6 +17,7 @@ export async function POST() {
             sameSite: 'lax',
         });
     } catch (error) {
+          console.error('Error verifying token:', error);
         return NextResponse.json({ error: 'Failed to logout' }, { status: 500 });
     }
 
