@@ -7,7 +7,7 @@ const Index = () => {
   const router = useRouter();
 
 const logout = async () => {
-  console.log('logout');
+
 
   await fetch('/api/logout', {
     method: 'POST',

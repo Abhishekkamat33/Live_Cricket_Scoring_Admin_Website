@@ -7,10 +7,19 @@ import { ToastContainer, toast } from 'react-toastify';
 import uuid from 'react-native-uuid';
 import { uploadImageToCloudinary } from '../utility/fetchImage';
 import Image from 'next/image';
-import { getAuth } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
 
 const defaultTeamALogo = '/default-teamA-logo.png'; // Put your default image in public folder
 const defaultTeamBLogo = '/default-teamB-logo.png';
+
+
+// Define the API response type
+interface ProtectedApiResponse {
+  message: string;
+  uid: string;
+}
+
+
 
 const Index = () => {
   const router = useRouter();
@@ -37,34 +46,40 @@ const Index = () => {
   });
 
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+// eslint-disable-next-line react-hooks/exhaustive-deps
 useEffect(() => {
-  async function verifySession() {
-    const auth = getAuth();
-    const user = auth.currentUser;
+  const auth = getAuth();
+  
+  const unsubscribe = onAuthStateChanged(auth, async (user: User | null) => {
     if (!user) {
       router.push('/login');
       return;
     }
-
-    const idToken = await user.getIdToken(true); // force refresh token
-
-    const response = await fetch('/api/protected', {
-      headers: { Authorization: `Bearer ${idToken}` }
-    });
-
-    if (response.status === 401) {
+    
+    try {
+      const idToken: string = await user.getIdToken(true); // force refresh token
+      
+      const response = await fetch('/api/protected', {
+        headers: { 
+          Authorization: `Bearer ${idToken}` 
+        }
+      });
+      
+      if (response.status === 401) {
+        router.push('/login');
+      } else {
+        const data: ProtectedApiResponse = await response.json();
+        setMatchCreated(data.uid);
+      }
+    } catch (error) {
+      console.error('Error verifying session:', error);
       router.push('/login');
-    } else {
-      const data = await response.json();
-      setMatchCreated(data.uid);
     }
-  }
+  });
 
-  verifySession();
+  // Cleanup subscription on unmount
+  return () => unsubscribe();
 }, [router]);
-
-
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setMatchForm({ ...matchForm, [e.target.name]: e.target.value });

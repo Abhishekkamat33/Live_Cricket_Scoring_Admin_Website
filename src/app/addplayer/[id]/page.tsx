@@ -64,29 +64,6 @@ export default function ManagePlayers() {
   const matchId = id;
 
 
-// eslint-disable-next-line react-hooks/exhaustive-deps
-useEffect(() => {
-  async function verifySession() {
-    try {
-      const response = await fetch('/api/protected');
-      if (response.status === 401) {
-        alert('You are not authorized. Contact with admin.');
-        router.push('/login');
-      } else if (response.ok) {
-      
-        // Use data if needed
-      } else {
-        console.error('Unexpected response status:', response.status);
-      }
-    } catch (error) {
-      console.error('Error verifying session:', error);
-      // Optionally alert user or retry
-    }
-  }
-
-  verifySession();
-}, [matchId, router]);
-
   const [loading, setLoading] = useState<boolean>(false);
   const [matchData, setMatchData] = useState<MatchData | null>(null);
 

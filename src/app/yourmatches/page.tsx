@@ -63,33 +63,6 @@ const CricketMatchManager = () => {
 
 
 
-// eslint-disable-next-line react-hooks/exhaustive-deps
-useEffect(() => {
-  async function verifySession() {
-    const auth = getAuth();
-    const user = auth.currentUser;
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-    
-    // Force refresh token to avoid expiry errors
-    const idToken = await user.getIdToken(true); 
-
-    const response = await fetch('/api/protected', {
-      headers: { Authorization: `Bearer ${idToken}` }
-    });
-
-    if (response.status === 401) {
-      router.push('/login');
-    } else {
-      const data = await response.json();
-      setMatchCreatedBy(data.uid);
-    }
-  }
-
-  verifySession();
-}, [router]);
 
 
 

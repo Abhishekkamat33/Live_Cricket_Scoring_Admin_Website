@@ -1,38 +1,30 @@
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+// /api/protected/route.ts
+import { NextRequest, NextResponse } from 'next/server';
 import admin from '../../../app/firebaseadmin';
 
-export async function GET() {
-  const cookieStore = await cookies();
-  const sessionToken = cookieStore.get('session')?.value;
-
-
-
-  if (!sessionToken) {
-    return NextResponse.json({ error: 'Unauthorized: No session token' }, { status: 401 });
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  const authHeader = request.headers.get('authorization');
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return NextResponse.json(
+      { error: 'Unauthorized: No token provided' }, 
+      { status: 401 }
+    );
   }
-
+  
+  const idToken = authHeader.split('Bearer ')[1];
+  
   try {
-    const decodedToken = await admin.auth().verifyIdToken(sessionToken);
-    
-    return NextResponse.json({ message: 'Access granted', uid: decodedToken.uid });
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    return NextResponse.json({ 
+      message: 'Access granted', 
+      uid: decodedToken.uid 
+    });
   } catch (error) {
-  console.error('Error verifying token:', error);
-    const response = NextResponse.json(
+    console.error('Error verifying token:', error);
+    return NextResponse.json(
       { error: 'Unauthorized: Invalid or expired token' },
       { status: 401 }
     );
-
-    // Clear the 'session' cookie in the response
-    response.cookies.set('session', '', {
-      path: '/',
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 0,
-      sameSite: 'lax',
-    });
-
-    return response;
   }
 }
-
