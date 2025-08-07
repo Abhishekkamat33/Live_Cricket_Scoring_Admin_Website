@@ -1,8 +1,7 @@
 'use client';
-import { getAuth } from "firebase/auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+
 
 const Index = () => {
   const router = useRouter();
@@ -40,9 +39,6 @@ const logout = async () => {
          LogOut
          </button>
          </div>
-          {/* <button className="sm:hidden p-2 rounded-lg bg-background/50">
-            <span className="text-lg">☰</span>
-          </button> */}
         </div>
       </header>
 
@@ -56,7 +52,7 @@ const logout = async () => {
             Score Every Ball, Anywhere
           </h2>
           <p className="text-lg sm:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
-            The easiest way to manage and track cricket scores in real time. Whether it's a friendly match or a tournament, we've got you covered.
+            The easiest way to manage and track cricket scores in real time. Whether it is a friendly match or a tournament, we have got you covered.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4 mb-12">
             <button

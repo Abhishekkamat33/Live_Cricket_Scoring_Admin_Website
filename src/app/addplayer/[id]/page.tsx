@@ -53,30 +53,39 @@ interface MatchData {
 const roles = ['Batsman', 'Bowler', 'All-Rounder', 'Wicketkeeper', 'Coach', 'Physio', 'Manager', 'Support'] as const;
 type Role = typeof roles[number];
 
-interface ManagePlayersProps {
-  matchId?: string;
-}
 
-export default function ManagePlayers({ matchId: propMatchId }: ManagePlayersProps) {
+
+export default function ManagePlayers() {
   const params = useParams();
   const router = useRouter();
 
   // Fix the id parameter type
   const id = typeof params?.id === 'string' ? params.id : Array.isArray(params?.id) ? params.id[0] : '';
-  const matchId = propMatchId ?? id;
+  const matchId = id;
 
-  useEffect(() => {
-    async function verifySession() {
+
+// eslint-disable-next-line react-hooks/exhaustive-deps
+useEffect(() => {
+  async function verifySession() {
+    try {
       const response = await fetch('/api/protected');
       if (response.status === 401) {
         alert('You are not authorized. Contact with admin.');
         router.push('/login');
+      } else if (response.ok) {
+      
+        // Use data if needed
       } else {
-        await response.json();
+        console.error('Unexpected response status:', response.status);
       }
+    } catch (error) {
+      console.error('Error verifying session:', error);
+      // Optionally alert user or retry
     }
-    verifySession();
-  }, [matchId, router]);
+  }
+
+  verifySession();
+}, [matchId, router]);
 
   const [loading, setLoading] = useState<boolean>(false);
   const [matchData, setMatchData] = useState<MatchData | null>(null);

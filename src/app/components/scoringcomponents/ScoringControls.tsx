@@ -98,31 +98,30 @@ interface ScoringControlsProps {
 
 const ScoringControls: React.FC<ScoringControlsProps> = ({ matchId, matchData }) => {
   const {
-    runs, setRuns,
-    extras, setExtras,
-    byes, setByes,
-    legByes, setLegByes,
+   setRuns,
+   setExtras,
+  setByes,
+     setLegByes,
     wickets, setWickets,
-    wides, setWides,
-    noBalls, setNoBalls,
+     setWides,
+    setNoBalls,
     balls, setBalls,
-    overs, setOvers,
+   setOvers,
     strikerName, setStrikerName,
     nonStrikerName, setNonStrikerName,
     currentInning, setCurrentInning,
-    match_id, setMatch_id,
+    setMatch_id,
     setMatch_data,
-    loading, setLoading,
+    setLoading,
     battingTeam, setBattingTeam,
     bowlingTeam, setBowlingTeam,
-    setStrike, strike,
-    totalRuns, setTotalRuns,
-    currentBowler, setCurrentBowler,
+   setTotalRuns,
+  setCurrentBowler,
     inningData,
     setNewBatsman, newBatsman,
     outBatsman, setOutBatsman,
     setFetchDataFirst, fetchDataFirst,
-    wicketType, setWicketType,
+    setWicketType,
     isSecondInning, setIsSecondInning,
     iswinner,
     setUndo,
@@ -132,7 +131,6 @@ const ScoringControls: React.FC<ScoringControlsProps> = ({ matchId, matchData })
 
   // Wicket info
   const [howOut, setHowOut] = useState<string>('');
-  const [bowlerName, setBowlerName] = useState<string>('');
   const [fielderName, setFielderName] = useState<string>('');
   const [out, setOut] = useState<boolean>(true);
 
@@ -156,6 +154,7 @@ const ScoringControls: React.FC<ScoringControlsProps> = ({ matchId, matchData })
   const [wideRuns, setWideRuns] = useState<number>(0);
   const [history, setHistory] = useState<Inning[]>([]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (inningData.length === 0) {
       setNeedBatsmenInput(true);
@@ -220,6 +219,7 @@ const ScoringControls: React.FC<ScoringControlsProps> = ({ matchId, matchData })
     }
   }, [matchData, inningData, fetchDataFirst, isSecondInning]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
 useEffect(() => {
   if (!matchData) return;
 
@@ -252,14 +252,16 @@ useEffect(() => {
 
 
 
-
+// eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!inningData) return;
     const previousBowler = inningData[inningData.length - 1]?.bowlingTeam?.recentBowlerName;
     if (!previousBowler) return;
   }, [recentBowler])
 
-  useEffect(() => {
+ 
+ // eslint-disable-next-line react-hooks/exhaustive-deps
+ useEffect(() => {
     if (!inningData || inningData.length === 0) return;
 
     const latest = inningData[inningData.length - 1];
@@ -506,7 +508,8 @@ useEffect(() => {
 
   const checkBowler = inningData[inningData.length - 1]?.bowlingTeam.recentBowler?.name;
 
-  useEffect(() => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+useEffect(() => {
     if (checkBowler) {
       setNeedNewBowlerInput(true)
     }
@@ -552,12 +555,14 @@ useEffect(() => {
     setRecentBowler(false);
   };
 
-  useEffect(() => {
+// eslint-disable-next-line react-hooks/exhaustive-deps
+useEffect(() => {
     const completedOvers: number = Math.floor(balls / 6);
     const ballsInCurrentOver: number = balls % 6;
     setOvers(`${completedOvers}.${ballsInCurrentOver}`);
   }, [balls]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (inningData && inningData.length > 0) {
       setHistory(prev => {
@@ -915,7 +920,6 @@ useEffect(() => {
                           <input
                             type="text"
                             value={strikerBowler}
-                            onChange={(e) => setBowlerName(e.target.value)}
                             className="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-red-500 focus:ring-4 focus:ring-red-200 transition-all outline-none text-base sm:text-lg"
                           />
                         </div>

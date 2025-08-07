@@ -11,8 +11,6 @@ import { doc, getDoc } from 'firebase/firestore';
 import CricketPlayersDisplay from '@/app/components/scoringcomponents/squard';
 import CommentaryPage from '../../components/scoringcomponents/BallTracker';
 
-
-
 interface Player {
   id: string;
   name: string;
@@ -27,54 +25,81 @@ interface Player {
   imageUrl?: string;
   isCurrentBowler?: boolean;
 }
-type MatchDataType = {
-  teamA: {
+
+interface Staff {
+  id: string;
+  name: string;
+  role: string;
+}
+
+type Inning = {
+  id?: string;
+  battingTeam: {
     name: string;
-    players: Player[];        // Change from string[] to Player[]
-    score: number;
     wickets: number;
+    score: number;
     overs: string;
+    battingOrder: Player[]; // You can define a more specific type for players if needed
   };
-  teamB: {
+  bowlingTeam: {
     name: string;
-    players: Player[];        // Change from string[] to Player[]
-    score: number;
     wickets: number;
+    score: number;
     overs: string;
+    bowlingOrder: Player[];
   };
-  date: string;
-  time: string;
-  venue: string;
-  matchType: string;
-  matchStatus: string;
-  overPlayed: number;
-  matchWinner: string;
-  tossWinner: string;
-  tossDecision: string;
+  totalRuns: number;
+  extras: number;
+  wickets: number;
+  balls: number;
+  wides: number;
+  noBalls: number;
+  byes: number;
+  legByes: number;
+  updatedAt: string;
+  matchId: string;
+  overs: string;
+  inningNumber: number;
+  target?: number;
+  iswinner?: string;
 };
 
 
+interface MatchTeam {
+  name: string;
+  score: number;
+  wickets: number;
+  overs: string;
+  players: Player[];
+  benchPlayers?: Player[];
+  supportingStaff?: Staff[];
+}
+
+interface MatchData {
+  teamA: MatchTeam;
+  teamB: MatchTeam;
+  tossWinner: string;
+  tossDecision: string;
+  matchType: string;
+  overPlayed: number;
+  matchWinner: string;
+  innings: Inning[];
+}
+
 const Index = () => {
-  const [matchData, setMatchData] = useState<MatchDataType | null>(null);
+  const [matchData, setMatchData] = useState<MatchData   | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
 
   const { id } = useParams();
   const matchId = id as string;
 
-
-
-
-
   // Controlled state for active tab
   const [activeTab, setActiveTab] = useState<'scoring' | 'commentary' | 'teams' | 'scorecard'>('scoring');
 
-  // Mobile hamburger menu toggle state
+  // Mobile menu state
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-
-
 
   // Fetch match data on mount or when matchId changes
   useEffect(() => {
@@ -86,22 +111,16 @@ const Index = () => {
         setError(null);
 
         const docRef = doc(db, 'matches', matchId);
-
         const docSnap = await getDoc(docRef);
 
-
         if (docSnap.exists()) {
-          const data = docSnap.data() as MatchDataType;
+          const data = docSnap.data() as MatchData;
           setMatchData(data);
-
-
         } else {
           setError('Match not found');
-          //console.log('No such match!');
         }
       } catch {
         setError('Error loading match data');
-        //console.error('Error fetching match:', error);
       } finally {
         setLoading(false);
       }
@@ -109,8 +128,6 @@ const Index = () => {
 
     fetchMatch();
   }, [matchId]);
-
-
 
   // Close mobile menu when clicking outside
   useEffect(() => {
@@ -128,7 +145,6 @@ const Index = () => {
     };
   }, [mobileMenuOpen]);
 
-  // Loading UI
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-emerald-50 to-blue-50 flex items-center justify-center px-4">
@@ -146,12 +162,12 @@ const Index = () => {
     );
   }
 
-  // Error UI
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-emerald-50 to-blue-50 flex items-center justify-center px-4">
         <div className="text-center space-y-4 max-w-md mx-auto p-6">
           <div className="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center">
+            {/* SVG Icon */}
             <svg
               className="w-8 h-8 text-red-600"
               fill="none"
@@ -184,7 +200,6 @@ const Index = () => {
   return (
     <ScoringProvider>
       <div className="container mx-auto max-w-full sm:max-w-xl md:max-w-5xl lg:max-w-7xl px-2 sm:px-4 ">
-
         {/* Tabs navigation */}
         <Tabs
           value={activeTab}
@@ -270,9 +285,12 @@ const Index = () => {
           <div className="text-center mb-10">
             <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-full px-6 py-3 shadow-lg border border-blue-100 justify-center mx-auto max-w-full sm:max-w-md overflow-x-auto">
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse shrink-0"></div>
-              <span className="font-bold text-blue-700 tracking-wide whitespace-nowrap">{matchData?.teamA.name} vs {matchData?.teamB.name}</span>
+              <span className="font-bold text-blue-700 tracking-wide whitespace-nowrap">
+                {matchData?.teamA.name} vs {matchData?.teamB.name}
+              </span>
             </div>
           </div>
+
           {/* Tab Contents */}
           <TabsContent value="scoring" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-full">
@@ -297,15 +315,9 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="teams">
-
             <CricketPlayersDisplay />
-
-
           </TabsContent>
         </Tabs>
-
-
-
 
         {/* Status Indicator */}
         <div className="fixed bottom-6 right-6 z-50">
@@ -315,9 +327,8 @@ const Index = () => {
           </div>
         </div>
       </div>
-
     </ScoringProvider>
   );
-}
+};
 
 export default Index;

@@ -7,6 +7,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import uuid from 'react-native-uuid';
 import { uploadImageToCloudinary } from '../utility/fetchImage';
 import Image from 'next/image';
+import { getAuth } from 'firebase/auth';
 
 const defaultTeamALogo = '/default-teamA-logo.png'; // Put your default image in public folder
 const defaultTeamBLogo = '/default-teamB-logo.png';
@@ -36,23 +37,32 @@ const Index = () => {
   });
 
 
-  useEffect(() => {
-    async function verifySession() {
-      const response = await fetch('/api/protected');
-      if (response.status === 401) {
-        // If unauthorized => redirect to login page
-        router.push('/login');
-      } else {
-        // If authorized, you can load or show data as needed
-        const data = await response.json();
-
-        setMatchCreated(data.uid);
-
-      }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+useEffect(() => {
+  async function verifySession() {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) {
+      router.push('/login');
+      return;
     }
 
-    verifySession();
-  }, [router]);
+    const idToken = await user.getIdToken(true); // force refresh token
+
+    const response = await fetch('/api/protected', {
+      headers: { Authorization: `Bearer ${idToken}` }
+    });
+
+    if (response.status === 401) {
+      router.push('/login');
+    } else {
+      const data = await response.json();
+      setMatchCreated(data.uid);
+    }
+  }
+
+  verifySession();
+}, [router]);
 
 
 

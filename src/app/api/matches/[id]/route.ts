@@ -2,16 +2,10 @@ import { NextResponse } from 'next/server';
 import { doc, deleteDoc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/firebaseConfig';
 
-interface Params {
-  params: {
-    id: string;
-  }
-}
-
-// `params` is passed as the 2nd argument and is awaited by Next.js already
-export async function DELETE(request: Request, { params }: Params) {
+// Delete match by ID
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
-    const id = params.id; // get id from params object
+    const id = params.id;
 
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
@@ -27,14 +21,17 @@ export async function DELETE(request: Request, { params }: Params) {
   }
 }
 
+// Update match by ID with given data in request body
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
     const id = params.id;
+
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
 
     const body = await request.json();
+
     const docRef = doc(db, 'matches', id);
     const docSnapshot = await getDoc(docRef);
 
@@ -42,7 +39,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Match not found' }, { status: 404 });
     }
 
-    await updateDoc(docRef, body);  // update with body data
+    await updateDoc(docRef, body);
 
     return NextResponse.json({ message: 'Match updated successfully' }, { status: 200 });
   } catch (error) {

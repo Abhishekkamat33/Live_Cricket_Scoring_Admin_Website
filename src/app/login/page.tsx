@@ -12,7 +12,7 @@ import {
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/firebaseConfig";
 
-type Player = { name: string };
+
 
 
 

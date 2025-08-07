@@ -75,7 +75,8 @@ const ScoreBoard: React.FC = () => {
     return wholeOvers * 6 + balls;
   };
 
-  useEffect(() => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+useEffect(() => {
     if (match_data) {
       setResult(match_data.matchWinner);
     }
@@ -88,7 +89,8 @@ const ScoreBoard: React.FC = () => {
     return (runs / (balls / 6)).toFixed(2);
   };
 
-  useEffect(() => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+useEffect(() => {
     if (!inningData || inningData.length === 0) {
       setBattingTeam(null);
       setBowlingTeam(null);
@@ -129,7 +131,8 @@ const ScoreBoard: React.FC = () => {
   }, [inningData, match_data]);
 
 
-  useEffect(() => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+useEffect(() => {
     if (striker && nonStriker) {
       // Create a new array with striker and nonStriker
       setActiveBatsmen([striker, nonStriker]);

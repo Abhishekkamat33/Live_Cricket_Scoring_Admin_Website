@@ -220,7 +220,8 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
 
 
 
-  useEffect(() => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+   useEffect(() => {
     if (!match_id) return
     if (iswinner !== '' || iswinner !== null || iswinner !== undefined) {
       const saveisWinner = async () => {
@@ -237,7 +238,8 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
   }, [iswinner, match_id])
 
   // Initialize React state from Firestore when match_id or currentInning changes
-  useEffect(() => {
+ // eslint-disable-next-line react-hooks/exhaustive-deps
+ useEffect(() => {
     if (!match_id) return;
 
     const inningDocRef = doc(db, 'matches', match_id, 'innings', `inning${fetchDataFirst}`);
@@ -285,11 +287,10 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
           setOutBatsman('');
           setFielderName('');
         }
-      } catch (error) {
-        //console.error('Error fetching inning data:', error);
+      } catch  {
+       
       }
     };
-
 
 
     fetchInningData();
@@ -297,7 +298,8 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
 
 
   // Listen to inning collection realtime updates (optional, for UI sync)
-  useEffect(() => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+useEffect(() => {
     if (!match_id) return;
 
     const inningsRef = collection(db, 'matches', match_id, 'innings');
@@ -312,7 +314,7 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
         setInningData(inningsData);
       },
       (error) => {
-        //console.error('Error fetching realtime innings:', error);
+        console.error('Error fetching realtime innings:', error);
       }
     );
 
@@ -324,7 +326,8 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
 
 
 
-  useEffect(() => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+useEffect(() => {
     if (!match_id || !inningData || inningData.length === 0 || !match_data) return;
 
     const totalWickets = inningData[inningData.length - 1].wickets;
@@ -397,7 +400,8 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
 
 
   // Save current inning data on key state changes
-  useEffect(() => {
+ // eslint-disable-next-line react-hooks/exhaustive-deps
+ useEffect(() => {
 
     if (!match_id) return;
 
@@ -575,9 +579,9 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
             firstInningCompleted: true
           });
           setIsSecondInning(false);
-          // //console.log('Inning data saved successfully');
-        } catch (error) {
-          //console.error('Error saving inning data:', error);
+         
+        } catch {
+         
         }
         return
       }
@@ -599,7 +603,8 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
   }, [currentInning]);
 
   // Update overs string and alert on over completion
-  useEffect(() => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+useEffect(() => {
     const completedOvers = Math.floor(balls / 6);
     const ballsInCurrentOver = balls % 6;
     setOvers(`${completedOvers}.${ballsInCurrentOver}`);
@@ -612,7 +617,8 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
   }, [balls]);
 
   // Swap strike in Firestore when strike state changes
-  useEffect(() => {
+ // eslint-disable-next-line react-hooks/exhaustive-deps
+ useEffect(() => {
     if (!match_id) return;
 
     const swapStrike = async () => {
@@ -646,7 +652,7 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
 
         setStrike(false);
       } catch (error) {
-        //console.error('Error swapping striker/non-striker:', error);
+        console.error('Error swapping striker/non-striker:', error);
       } finally {
         setStrikeSwapInProgress(false);
       }
@@ -658,7 +664,8 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
   }, [strike]);
 
   // Update isCurrentBowler flag when currentBowler changes
-  useEffect(() => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+useEffect(() => {
     if (!match_id) return;
 
     const inningNo = (inningData?.length);
@@ -721,7 +728,7 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
 
 
       } catch (error) {
-        //console.error('Failed to update current bowler flag:', error);
+        console.error('Failed to update current bowler flag:', error);
       }
     };
 
@@ -734,7 +741,8 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
 
   //update bolwer current value
 
-  useEffect(() => {
+ // eslint-disable-next-line react-hooks/exhaustive-deps
+ useEffect(() => {
 
     if (!match_id) return
     if (recentBowler === false) return
@@ -794,7 +802,7 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
 
         }
       } catch (error) {
-        //console.error('Failed to update current bowler flag:', error);
+        console.error('Failed to update current bowler flag:', error);
       }
     }
 
@@ -807,7 +815,8 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
 
 
   // Update inning stats on ball/run changes
-  useEffect(() => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+useEffect(() => {
     if (match_data?.matchWinner) {
       return
     }
@@ -853,11 +862,6 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
         const newTotalwides = inningData?.wides + wides;
         const six = runs === 6 ? 1 : 0;
         const four = runs === 4 ? 1 : 0;
-        const previousBowler = inningData?.bowlingTeam?.bowlingOrder.find((player: Player) => player.isCurrentBowler)?.name || '';
-        if (previousBowler !== '') {
-          const recentBowlername = previousBowler
-        }
-
         const oversFormatted = calculateOvers(newTotalBalls);
         const currentBallInOver = (previousBalls + balls - 1) % 6;
 
@@ -1256,7 +1260,7 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
           ////console.log('Normal update done');
         }
       } catch (error) {
-        ////console.error('Error updating inning stats:', error);
+        console.error('Error updating inning stats:', error);
       }
     };
 
@@ -1270,7 +1274,8 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
 
 
   //for partnerShip and fallofwickets
-  useEffect(() => {
+ // eslint-disable-next-line react-hooks/exhaustive-deps
+ useEffect(() => {
     if (!match_id) return;
 
     const inningDocRef = doc(db, 'matches', match_id, 'innings', `inning${fetchDataFirst}`);
@@ -1297,8 +1302,8 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
           ? inningData.battingTeam.fallofWicket
           : [];
 
-        let updatedPartnerships = [...existingPartnerships];
-        let updatedFallOfWickets = [...existingFallOfWickets];
+        const updatedPartnerships = [...existingPartnerships];
+        const updatedFallOfWickets = [...existingFallOfWickets];
 
         // --- Handle wicket
         if (typeof wickets === "number" && wickets === 1 && outBatsman) {
@@ -1365,7 +1370,7 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
         });
 
       } catch (error) {
-        //console.error("Failed to update partnership/fallofwicket:", error);
+        console.error("Failed to update partnership/fallofwicket:", error);
       }
     };
 
@@ -1375,6 +1380,38 @@ export const ScoringProvider = ({ children }: { children: ReactNode }) => {
 
 
 
+type Primitive = string | number | boolean | null | undefined;
+
+
+function flattenObject<T extends object>(
+  obj: T,
+  prefix = ''
+): Record<string, Primitive> {
+  const result: Record<string, Primitive> = {};
+
+  for (const key in obj) {
+    if (!obj.hasOwnProperty(key)) continue;
+
+    const value = obj[key];
+    const prefixedKey = prefix ? `${prefix}${key}` : key;
+
+    if (
+      value !== null &&
+      typeof value === 'object' &&
+      !Array.isArray(value)
+    ) {
+      Object.assign(result, flattenObject(value, prefixedKey + '.'));
+    } else {
+      // value is primitive or array (you can handle array case if you want)
+      result[prefixedKey] = value as Primitive;
+    }
+  }
+
+  return result;
+}
+
+
+ // eslint-disable-next-line react-hooks/exhaustive-deps
 useEffect(() => {
   const updateInningInFirestore = async () => {
     if (inningData && undo) {
@@ -1382,22 +1419,9 @@ useEffect(() => {
         const inningDocRef = doc(db, 'matches', match_id, 'innings', `inning${fetchDataFirst}`);
         const matchDocRef = doc(db, 'matches', match_id);
 
-        function flattenObject(obj: any, prefix = ''): Record<string, any> {
-          return Object.keys(obj).reduce((acc, k) => {
-            const pre = prefix.length ? `${prefix}.` : '';
-            const value = obj[k];
-            if (value && typeof value === 'object' && !Array.isArray(value)) {
-              Object.assign(acc, flattenObject(value, pre + k));
-            } else {
-              acc[pre + k] = value;
-            }
-            return acc;
-          }, {} as Record<string, any>);
-        }
+        const flattenedUndo = flattenObject(undo);
 
-        const flatUndo = flattenObject(undo);
-
-        await updateDoc(inningDocRef, flatUndo);
+        await updateDoc(inningDocRef, flattenedUndo);
         await updateDoc(matchDocRef, {
           totalRuns: undo.totalRuns,
           wickets: undo.wickets,
@@ -1415,7 +1439,8 @@ useEffect(() => {
 
   const [matchLiveSet, setMatchLiveSet] = useState(false);
 
-  useEffect(() => {
+ // eslint-disable-next-line react-hooks/exhaustive-deps
+ useEffect(() => {
     if (!match_id) return;
 
     // Run only once: when there is something recorded in the match (balls/runs/etc)
@@ -1448,7 +1473,7 @@ useEffect(() => {
           }
         }
       } catch (error) {
-        //console.error('Error setting match status live:', error);
+        console.error('Error setting match status live:', error);
       }
     };
 
@@ -1458,7 +1483,8 @@ useEffect(() => {
 
 
 
-  useEffect(() => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+useEffect(() => {
     if (!inningData || !match_id) return;
 
     const lastInning = inningData[inningData.length - 1];
